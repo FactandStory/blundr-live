@@ -79,6 +79,7 @@
   /* bottom bar */
   .bottom { display: grid; grid-template-columns: 27rem 1fr 24rem; gap: 2.4rem; align-items: center; border-top: 2px solid var(--line); padding-top: 1rem; min-height: 5rem; }
   .next { display: flex; align-items: baseline; gap: .9rem; white-space: nowrap; overflow: hidden; }
+  .next > * { flex-shrink: 0; }
   .next .t { font-size: 3.2rem; line-height: 1; color: var(--gold); font-variant-numeric: tabular-nums; min-width: 8.2rem; }
   .next .t.now { font-size: 2rem; color: var(--cyan); }
   .next .l { color: var(--muted); font-size: 1.2rem; }
@@ -252,7 +253,7 @@
 
     const nx = $('#next'); nx.replaceChildren();
     const nr = nextRound();
-    if (nr) nx.append(el('span', { class: 't sora', id: 'cdbar' }, mmss(nr.at - Date.now())), el('span', { class: 'l' }, nr.number ? `until round ${nr.number} at ${nr.label}` : `until ${(nr.note || 'next').toLowerCase()} at ${nr.label}`));
+    if (nr) nx.append(el('span', { class: 't sora', id: 'cdbar' }, mmss(nr.at - Date.now())), el('span', { class: 'l', id: 'cdlabel' }, nr.number ? `until round ${nr.number} at ${nr.label}` : `until ${(nr.note || 'next').toLowerCase()} at ${nr.label}`));
     else nx.append(el('span', { class: 'l' }, 'Next round time appears here.'));
 
     const a = (data.announcements || []).slice(-1)[0];
@@ -266,7 +267,7 @@
     $('#now').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     if (!data) return; const nr = nextRound(); const left = nr ? nr.at.getTime() - Date.now() : null;
     const cd = $('#cd'); if (cd && nr) { if (left > 0) { cd.textContent = mmss(left); cd.classList.remove('now'); } else { cd.textContent = nr.number ? `Round ${nr.number} is starting` : 'Starting now'; cd.classList.add('now'); } }
-    const bar = $('#cdbar'); if (bar && nr) { if (left > 0) { bar.textContent = mmss(left); bar.classList.remove('now'); } else { bar.textContent = nr.number ? `Round ${nr.number} starting` : 'Starting now'; bar.classList.add('now'); } }
+    const bar = $('#cdbar'), lab = $('#cdlabel'); if (bar && nr) { if (left > 0) { bar.textContent = mmss(left); bar.classList.remove('now'); if (lab) lab.hidden = false; } else { bar.textContent = nr.number ? `Round ${nr.number} starting` : 'Starting now'; bar.classList.add('now'); if (lab) lab.hidden = true; } }
   }
   tick(); setInterval(tick, 1000);
   load(); setInterval(load, REFRESH_MS);
