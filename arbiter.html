@@ -25,16 +25,19 @@
   .status.ok { color: var(--win); font-weight: 600; }
   .status.bad { color: var(--loss); font-weight: 600; }
   .locked { padding: 24px 16px; text-align: center; color: var(--muted); }
-  .rule { font-size: .85rem; color: var(--muted); margin: 0 0 12px; }
+  .rule { font-size: .9rem; color: var(--muted); margin: 0 0 12px; }
+  .round { font-family: Sora, sans-serif; font-weight: 800; font-size: 1.5rem; letter-spacing: -.02em; margin: 6px 0 4px; }
+  .round small { font-family: "Plus Jakarta Sans", sans-serif; font-weight: 500; font-size: .9rem; color: var(--muted); margin-left: 8px; }
 </style>
 </head>
 <body>
-<div class="who"><div><b id="arb">Arbiter</b><div class="state" id="updated">Loading…</div></div><div class="state" id="mode"></div></div>
+<div class="who"><div><b id="event">Bristol Junior Open</b><div class="state"><span id="arb">Arbiter</span> · <span id="updated">Loading…</span></div></div><div class="state" id="mode"></div></div>
 <main id="app">
   <section class="card" id="locked" hidden><p class="locked">This page needs the arbiter code from your badge. Scan your badge QR code again.</p></section>
   <section class="card" id="panel" hidden>
     <div class="tabs" id="sections"></div>
-    <p class="rule" id="roundline"></p>
+    <h1 class="round" id="roundline"></h1>
+    <p class="rule"><b>1 – 0</b> White wins &nbsp;·&nbsp; <b>½ – ½</b> draw &nbsp;·&nbsp; <b>0 – 1</b> Black wins. Tap once per board; the desk sees every tap.</p>
     <div id="boards"></div>
   </section>
 </main>
@@ -58,16 +61,16 @@
   function render() {
     const arbName = data.results && data.results.pins ? data.results.pins[hashPin(pin)] : null;
     if (!pin || (data.results && data.results.pins && !arbName)) { $('#locked').hidden = false; $('#panel').hidden = true; $('#arb').textContent = 'Arbiter'; return; }
-    $('#arb').textContent = arbName || 'Arbiter'; $('#locked').hidden = true; $('#panel').hidden = false;
-    $('#updated').textContent = `Pairings as of ${new Date(data.generatedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+    $('#arb').textContent = arbName || 'Arbiter'; $('#event').textContent = data.event.name; $('#locked').hidden = true; $('#panel').hidden = false;
+    $('#updated').textContent = `pairings ${new Date(data.generatedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
     const secs = Object.values(data.sections); if (!open || !data.sections[open]) open = secs[0].slug;
     const tabs = $('#sections'); tabs.replaceChildren();
     for (const s of secs) tabs.append(el('button', { role: 'tab', 'aria-selected': String(s.slug === open), onclick: () => { open = s.slug; render(); } }, s.name));
     const sec = data.sections[open]; const box = $('#boards'); box.replaceChildren();
-    if (!sec.currentRound) { $('#roundline').textContent = 'No round published yet.'; return; }
+    if (!sec.currentRound) { $('#roundline').textContent = 'No round published yet'; return; }
     const rows = sec.rounds[sec.currentRound] || [];
     const done = rows.filter(r => r.result && r.black).length, total = rows.filter(r => r.black).length;
-    $('#roundline').textContent = `Round ${sec.currentRound} · ${done} of ${total} results in Tornelo`;
+    $('#roundline').replaceChildren(`Round ${sec.currentRound}`, el('small', {}, `${done} of ${total} in Tornelo`));
     for (const r of rows) {
       if (!r.black || /^bye$/i.test(clean(r.black))) continue;
       const key = `${sec.slug}|${sec.currentRound}|${r.board}`; const s = sent[key];
