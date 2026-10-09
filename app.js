@@ -98,6 +98,13 @@
     if (i.score != null) bits.push(`${fmtPts(i.score)} pts${i.rank ? ', ' + ordinal(i.rank) : ''}`);
     return bits.join(' · ');
   }
+  function oppSentence(name, sec) {
+    const i = info(name, sec); const who = clean(name).split(' ')[0];
+    const bits = [];
+    bits.push(i.rating ? `is rated ${i.rating}` : 'is unrated');
+    if (i.score != null) bits.push(`is now on ${fmtPts(i.score)} ${i.score === 1 ? 'point' : 'points'}${i.rank ? `, ${ordinal(i.rank)} in ${sec.name}` : ''}`);
+    return `${who} ${bits.join(' and ')}.`;
+  }
   function ticketBlock(name, sec, hist) {
     const q = (data.qualify || {})[sec.slug]; if (!q) return null;
     const me = info(name, sec); const score = me.score ?? 0;
@@ -252,8 +259,8 @@
       el('div', { class: 'board' }, h.board, el('small', {}, 'board')),
       el('div', { class: 'detail' },
         el('span', { class: 'small', style: 'text-transform:uppercase;letter-spacing:.06em;font-weight:700' }, heading),
-        el('strong', {}, `${first} has `, el('span', { class: `pill ${h.colour.toLowerCase()}` }, h.colour), ` against `, el('button', { class: 'linklike', onclick: () => follow(h.opponent, sec.slug) }, clean(h.opponent) || 'TBC')),
-        el('span', { class: 'small' }, h.opponent ? `Opponent: ${oppLine(h.opponent, sec)}` : ''),
+        el('strong', {}, `${first} ${h.result ? 'played' : upcoming ? 'will have' : 'is playing'} `, el('span', { class: `pill ${h.colour.toLowerCase()}` }, h.colour), ` against `, el('button', { class: 'linklike', onclick: () => follow(h.opponent, sec.slug) }, clean(h.opponent) || 'TBC'), '.'),
+        el('span', { class: 'small' }, h.opponent ? oppSentence(h.opponent, sec) : ''),
         verdict ? el('span', {}, el('span', { class: `pill ${h.outcome}` }, verdict)) : el('span', {}, el('span', { class: 'pill live' }, upcoming ? 'Not started' : 'In play'))));
   }
 
