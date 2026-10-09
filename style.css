@@ -126,3 +126,7 @@ th.num.tb, td.num.tb { color: var(--muted); }
 .banner .r { font-family: Sora, system-ui, sans-serif; font-weight: 800; font-size: 1.6rem; letter-spacing: -.02em; line-height: 1.1; }
 .banner .d { font-size: .9rem; margin-top: 2px; }
 .banner button { font: inherit; font-weight: 700; padding: 10px 14px; border-radius: 10px; border: 2px solid #070709; background: transparent; color: #070709; white-space: nowrap; }
+
+.find.later h1 { font-size: 1.1rem; }
+.find.later input[type=search] { font-size: 1rem; padding: 10px 12px; }
+.now .board small { margin-top: 2px; }

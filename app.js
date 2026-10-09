@@ -162,6 +162,9 @@
       tickCountdown();
     } else nrBox.hidden = true;
 
+    // find card: top of the page until a child is followed, then below pairings as "look up another player"
+    const find = document.querySelector('.card.find'), boards = $('#boards'), h1 = find && find.querySelector('h1');
+    if (find) { if (followed) { boards.after(find); find.classList.add('later'); if (h1) h1.textContent = 'Look up another player'; } else { $('#app').prepend(find); find.classList.remove('later'); if (h1) h1.textContent = 'Find a player'; const rb = $('#result-banner'); if (rb) $('#app').prepend(rb); } }
     renderResultBanner();
     renderFollowed();
     renderBrowse();
@@ -240,14 +243,18 @@
   }
 
   function nowBlock(h, sec) {
-    if (h.bye) return el('div', { class: 'now' }, el('div', { class: 'board' }, '—', el('small', {}, 'board')), el('div', { class: 'detail' }, el('strong', {}, `Round ${h.round}: no game this round`), el('span', {}, 'A bye scores one point. Check with the desk if this looks wrong.')));
-    const pill = h.outcome ? el('span', { class: `pill ${h.outcome}` }, h.outcome === 'win' ? 'Won' : h.outcome === 'loss' ? 'Lost' : 'Draw') : el('span', { class: 'pill live' }, 'Playing');
+    const first = clean(followed.name).split(' ')[0];
+    if (h.bye) return el('div', { class: 'now' }, el('div', { class: 'board' }, '—', el('small', {}, 'board')), el('div', { class: 'detail' }, el('strong', {}, `Round ${h.round}: ${first} has a bye`), el('span', {}, 'No game this round. A bye scores one point.')));
+    const nr = nextRound(); const upcoming = !h.result && nr && nr.number === h.round && nr.at.getTime() > Date.now();
+    const heading = h.result ? `Round ${h.round} result` : upcoming ? `Next game · round ${h.round}, ${nr.label}` : `Playing now · round ${h.round}`;
+    const verdict = !h.result ? null : h.outcome === 'win' ? `${first} won, ${h.result.replace('-', ' – ')}` : h.outcome === 'loss' ? `${first} lost, ${h.result.replace('-', ' – ')}` : `Draw, ${h.result.replace('-', ' – ')}`;
     return el('div', { class: 'now' },
-      el('div', { class: 'board' }, h.board, el('small', {}, `${sec.name} board`)),
+      el('div', { class: 'board' }, h.board, el('small', {}, 'board')),
       el('div', { class: 'detail' },
-        el('strong', {}, `Round ${h.round} v `, el('button', { class: 'linklike', onclick: () => follow(h.opponent, sec.slug) }, clean(h.opponent) || 'TBC')),
-        el('span', { class: 'small' }, h.opponent ? oppLine(h.opponent, sec) : ''),
-        el('span', {}, el('span', { class: `pill ${h.colour.toLowerCase()}` }, h.colour), ' ', pill, h.result ? ` ${h.result.replace('-', ' – ')}` : '')));
+        el('span', { class: 'small', style: 'text-transform:uppercase;letter-spacing:.06em;font-weight:700' }, heading),
+        el('strong', {}, `${first} has `, el('span', { class: `pill ${h.colour.toLowerCase()}` }, h.colour), ` against `, el('button', { class: 'linklike', onclick: () => follow(h.opponent, sec.slug) }, clean(h.opponent) || 'TBC')),
+        el('span', { class: 'small' }, h.opponent ? `Opponent: ${oppLine(h.opponent, sec)}` : ''),
+        verdict ? el('span', {}, el('span', { class: `pill ${h.outcome}` }, verdict)) : el('span', {}, el('span', { class: 'pill live' }, upcoming ? 'Not started' : 'In play'))));
   }
 
   function historyTable(hist, sec) {
