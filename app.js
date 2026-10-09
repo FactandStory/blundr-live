@@ -229,7 +229,7 @@
       el('div', { class: 'stats' },
         el('div', { class: 'stat' }, el('b', {}, fmtPts(me.score)), el('span', {}, 'points'), el('span', { class: 'sub' }, `of ${sec.totalRounds || 6} possible`)),
         el('div', { class: 'stat' }, el('b', {}, me.rank ? ordinal(me.rank) : '–'), el('span', {}, 'place'), el('span', { class: 'sub' }, `of ${sec.standings.length || '–'} in ${sec.name}`)),
-        el('div', { class: 'stat' }, el('b', {}, me.perf ?? '–'), el('span', {}, 'performance'), el('span', { class: 'sub' }, me.delta ? `rating ${me.delta.startsWith('-') ? '' : '+'}${me.delta} so far` : 'rating from this event'))),
+        el('div', { class: 'stat' }, el('b', {}, me.perf ?? '–'), el('span', {}, 'performance'), el('span', { class: 'sub' }, me.delta ? `rating change so far: ${me.delta.startsWith('-') ? '' : '+'}${me.delta}` : 'rating from this event'))),
       ticketBlock(name, sec, hist),
       historyTable(hist, sec)].filter(Boolean));
   }
