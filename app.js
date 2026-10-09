@@ -257,14 +257,15 @@
     if (h.bye) return el('div', { class: 'now' }, el('div', { class: 'board' }, '—', el('small', {}, 'board')), el('div', { class: 'detail' }, el('strong', {}, `Round ${h.round}: ${first} has a bye`), el('span', {}, 'No game this round. A bye scores one point.')));
     const nr = nextRound(); const upcoming = !h.result && nr && nr.number === h.round && nr.at.getTime() > Date.now();
     const heading = h.result ? `Round ${h.round} result` : upcoming ? `Next game · round ${h.round}, ${nr.label}` : `Playing now · round ${h.round}`;
-    const verdict = !h.result ? null : h.outcome === 'win' ? `${first} won, ${h.result.replace('-', ' – ')}` : h.outcome === 'loss' ? `${first} lost, ${h.result.replace('-', ' – ')}` : `Draw, ${h.result.replace('-', ' – ')}`;
+    const verdict = !h.result ? null : h.outcome === 'win' ? `A win for ${first}` : h.outcome === 'loss' ? `A loss for ${first}` : `A draw for ${first}`;
+    const scoreline = h.result ? h.result.replace('-', ' – ') : '';
     return el('div', { class: 'now' },
       el('div', { class: 'board' }, h.board, el('small', {}, 'board')),
       el('div', { class: 'detail' },
         el('span', { class: 'small', style: 'text-transform:uppercase;letter-spacing:.06em;font-weight:700' }, heading),
-        el('strong', {}, `${first} ${h.result ? 'played' : upcoming ? 'will have' : 'is playing'} `, el('span', { class: `pill ${h.colour.toLowerCase()}` }, h.colour), ` against `, el('button', { class: 'linklike', onclick: () => follow(h.opponent, sec.slug) }, clean(h.opponent) || 'TBC'), '.'),
-        el('span', { class: 'small' }, h.opponent ? oppSentence(h.opponent, sec) : ''),
-        verdict ? el('span', {}, el('span', { class: `pill ${h.outcome}` }, verdict)) : el('span', {}, el('span', { class: 'pill live' }, upcoming ? 'Not started' : 'In play'))));
+        verdict ? el('strong', { class: `verdict ${h.outcome}` }, verdict, ' ', el('span', { class: `pill ${h.outcome}` }, scoreline)) : el('strong', {}, upcoming ? `${first} plays next` : `${first} is playing now`, ' ', el('span', { class: 'pill live' }, upcoming ? 'Not started' : 'In play')),
+        el('span', {}, `${first} ${h.result ? 'played' : upcoming ? 'will have' : 'has'} `, el('span', { class: `pill ${h.colour.toLowerCase()}` }, h.colour), ` against `, el('button', { class: 'linklike', onclick: () => follow(h.opponent, sec.slug) }, clean(h.opponent) || 'TBC'), '.'),
+        el('span', { class: 'small' }, h.opponent ? oppSentence(h.opponent, sec) : '')));
   }
 
   function historyTable(hist, sec) {

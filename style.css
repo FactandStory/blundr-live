@@ -134,3 +134,6 @@ th.num.tb, td.num.tb { color: var(--muted); }
 
 .pill { white-space: nowrap; }
 td.num .pill { font-size: .78rem; }
+
+.now .detail strong.verdict { font-family: Sora, system-ui, sans-serif; font-size: 1.35rem; letter-spacing: -.02em; }
+.now .detail strong.verdict.win { color: var(--win); } .now .detail strong.verdict.loss { color: var(--loss); }
