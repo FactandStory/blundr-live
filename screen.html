@@ -24,7 +24,7 @@
   /* top bar */
   .top { display: flex; align-items: center; justify-content: space-between; gap: 2rem; }
   .brand { display: flex; align-items: center; gap: 1.2rem; }
-  .brand img { height: 2.2rem; width: auto; filter: invert(1) hue-rotate(180deg); display: block; }
+  .brand img { height: 2.2rem; width: auto; display: block; }
   .brand .event { font-weight: 600; font-size: 1.2rem; color: var(--muted); }
   .chip { display: inline-flex; align-items: center; gap: .5rem; background: var(--cyan); color: #070709; font-weight: 700; font-size: .95rem; padding: .25rem .8rem; border-radius: 999px; letter-spacing: .04em; text-transform: uppercase; }
   .chip::before { content: ''; width: .6rem; height: .6rem; border-radius: 50%; background: #070709; animation: blink 1.6s infinite; }
@@ -80,7 +80,7 @@
 </head>
 <body>
 <header class="top">
-  <div class="brand"><img src="img/logo.png" alt="blundr"><span class="event" id="event-name">Bristol Junior Open</span><span class="chip" id="chip">Live</span></div>
+  <div class="brand"><img src="img/logo-cyan.png" alt="blundr"><span class="event" id="event-name">Bristol Junior Open</span><span class="chip" id="chip">Live</span></div>
   <div class="clock"><div class="time sora" id="now">--:--</div><div class="updated" id="updated">Loading…</div></div>
 </header>
 
@@ -140,7 +140,7 @@
       for (let i = 0; i < rows.length; i += ROWS * 2) paged.push(rows.slice(i, i + ROWS * 2));
       if (!paged.length) paged.push([]);
       paged.forEach((rows, i) => out.push({ sec, kind: 'pairings', rows, page: i + 1, pages: paged.length, complete }));
-      if (complete && sec.standings.length) out.push({ sec, kind: 'standings' });
+      if (sec.standings.length) out.push({ sec, kind: 'standings', complete });
     }
     slides = out;
     if (idx >= slides.length) idx = 0;
@@ -183,7 +183,8 @@
       const rows = sec.standings;
       const half = Math.ceil(rows.length / 2);
       const table = list => { const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', { class: 'rank' }, '#'), el('th', {}, 'Player'), el('th', { class: 'pts' }, 'Pts')))); const tb = el('tbody'); for (const r of list) tb.append(el('tr', {}, el('td', { class: 'rank' }, r.rank), el('td', {}, clean(r.name)), el('td', { class: 'pts' }, r.score ?? ''))); t.append(tb); return t; };
-      return [head('Standings', `after round ${sec.currentRound} of ${sec.totalRounds || 6}`), el('div', { class: 'cols' }, table(rows.slice(0, half)), table(rows.slice(half)))];
+      const sub = s.complete ? `after round ${sec.currentRound} of ${sec.totalRounds || 6}` : sec.progress ? `round ${sec.currentRound} in play · ${sec.progress.entered} of ${sec.progress.boards} results in` : `round ${sec.currentRound} in play`;
+      return [head('Standings', sub), el('div', { class: 'cols' }, table(rows.slice(0, half)), table(rows.slice(half)))];
     }
 
     // pairings
