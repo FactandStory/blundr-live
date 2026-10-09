@@ -199,14 +199,16 @@
     const hist = playerHistory(followed.name, sec);
     const latest = [...hist].reverse().find(h => h.outcome || h.bye); if (!latest) { box.hidden = true; return; }
     const key = `blundr.seen.${sec.slug}.${latest.round}.${norm(followed.name)}`;
-    if (safeGet(key)) { box.hidden = true; return; }
+    const current = latest.bye ? 'bye' : latest.outcome; const seen = safeGet(key);
+    if (seen === current) { box.hidden = true; return; }
+    const corrected = seen && seen !== current;
     const first = clean(followed.name).split(' ')[0];
     const verb = latest.bye ? `${first} has a bye` : latest.outcome === 'win' ? `${first} wins` : latest.outcome === 'draw' ? `${first} draws` : `${first} loses`;
     const detail = latest.bye ? 'One point, no game this round.' : `Round ${latest.round}, ${latest.colour.toLowerCase()} against ${clean(latest.opponent)} on board ${latest.board}.`;
     box.className = 'card banner ' + (['u8', 'u10', 'u12'].includes(sec.slug) ? sec.slug : 'other');
     box.hidden = false;
-    box.replaceChildren(el('div', {}, el('div', { class: 'k' }, `Result · round ${latest.round}`), el('div', { class: 'r' }, verb), el('div', { class: 'd' }, detail)),
-      el('button', { onclick: () => { safeSet(key, 1); render(); } }, 'Got it'));
+    box.replaceChildren(el('div', {}, el('div', { class: 'k' }, `${corrected ? 'Corrected result' : 'Result'} · round ${latest.round}`), el('div', { class: 'r' }, verb), el('div', { class: 'd' }, corrected ? 'The arbiter has corrected this result. ' + detail : detail)),
+      el('button', { onclick: () => { safeSet(key, current); render(); } }, 'Got it'));
   }
 
   function renderFollowed() {
@@ -229,7 +231,8 @@
       el('div', { class: 'stats' },
         el('div', { class: 'stat' }, el('b', {}, fmtPts(me.score)), el('span', {}, 'points'), el('span', { class: 'sub' }, `of ${sec.totalRounds || 6} possible`)),
         el('div', { class: 'stat' }, el('b', {}, me.rank ? ordinal(me.rank) : '–'), el('span', {}, 'place'), el('span', { class: 'sub' }, `of ${sec.standings.length || '–'} in ${sec.name}`)),
-        el('div', { class: 'stat' }, el('b', {}, me.perf ?? '–'), el('span', {}, 'performance'), el('span', { class: 'sub' }, me.delta ? `rating change so far: ${me.delta.startsWith('-') ? '' : '+'}${me.delta}` : 'rating from this event'))),
+        el('div', { class: 'stat' }, el('b', {}, me.perf ?? '–'), el('span', {}, 'performance rating'), el('span', { class: 'sub' }, 'from results so far')),
+        el('div', { class: 'stat' }, el('b', {}, me.delta ? `${me.delta.startsWith('-') ? '' : '+'}${me.delta}` : '–'), el('span', {}, 'predicted rating change'), el('span', { class: 'sub' }, "Tornelo's estimate, not the ECF figure"))),
       ticketBlock(name, sec, hist),
       historyTable(hist, sec)].filter(Boolean));
   }
