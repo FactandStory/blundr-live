@@ -151,7 +151,7 @@
       if (idx < 0) step(); else showSlide(idx, false);
     } catch (e) {
       failures++;
-      if (failures >= 2 && DATA_URL === LOCAL_URL && !/github\.io$/.test(location.hostname)) { DATA_URL = PUBLIC_URL; failures = 0; $('#updated').textContent = 'Desk unreachable; using the public copy'; return load(); }
+      if (failures >= 1 && DATA_URL === LOCAL_URL && !/github\.io$/.test(location.hostname)) { DATA_URL = PUBLIC_URL; failures = 0; $('#updated').textContent = 'Desk unreachable; using the public copy'; return load(); }
       if (failures >= 2) { $('#updated').textContent = data ? 'Connection lost. Showing the last update.' : 'Waiting for data…'; $('#chip').classList.add('stale'); }
     }
   }
