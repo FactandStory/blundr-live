@@ -171,7 +171,7 @@
     const cur = hist.find(h => h.round === sec.currentRound);
     box.hidden = false;
     const me = info(name, sec);
-    box.replaceChildren(
+    box.replaceChildren(...[
       el('div', { class: 'head' },
         el('div', {}, el('div', { class: 'name' }, clean(name)), el('div', { class: 'meta' }, `${sec.name} section${me.rating ? ' · rated ' + me.rating : ' · unrated'}`)),
         el('button', { class: 'forget', onclick: () => { followed = null; safeSet('blundr.follow', null); render(); } }, 'Change player')),
@@ -182,7 +182,7 @@
         el('div', { class: 'stat' }, el('b', {}, me.rank ? ordinal(me.rank) : '–'), el('span', {}, 'place'), el('span', { class: 'sub' }, `of ${sec.standings.length || '–'} in ${sec.name}`)),
         el('div', { class: 'stat' }, el('b', {}, me.perf ?? '–'), el('span', {}, 'performance'), el('span', { class: 'sub' }, me.delta ? `rating ${me.delta.startsWith('-') ? '' : '+'}${me.delta} so far` : 'rating from this event'))),
       ticketBlock(name, sec, hist),
-      historyTable(hist, sec));
+      historyTable(hist, sec)].filter(Boolean));
   }
 
   // Check-in: shown until round 1 is paired. Opens the pre-filled form; one tap on Submit there.
