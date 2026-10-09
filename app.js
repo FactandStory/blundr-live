@@ -309,7 +309,7 @@
       hasRtg ? el('td', { class: 'num' }, s.rating ?? '') : null, el('td', { class: 'num' }, s.score ?? ''),
       hasTb ? el('td', { class: 'num tb' }, s.tiebreak ?? '') : null, hasPerf ? el('td', { class: 'num tb' }, s.perf ?? '') : null));
     t.append(tb); box.append(t);
-    box.append(el('p', { class: 'standings-note' }, [hasTb ? 'BH is the Buchholz tiebreak: the total points of everyone you have played. Higher breaks a tie.' : null, hasPerf ? 'Perf is your performance rating in this event so far.' : null, 'Tap a name to follow that player.'].filter(Boolean).join(' ')));
+    box.append(el('p', { class: 'standings-note' }, [hasTb ? 'BH is the Buchholz tiebreak: the total points of everyone you have played. Higher breaks a tie; see “How places are decided” below.' : null, hasPerf ? 'Perf is your performance rating in this event so far.' : null, 'Tap a name to follow that player.'].filter(Boolean).join(' ')));
   }
 
   function renderBoards() {
