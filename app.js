@@ -126,7 +126,7 @@
   function nextRound() {
     const today = (hm) => { const [h, m] = hm.split(':').map(Number); const d = new Date(); d.setHours(h, m, 0, 0); return d; };
     const nr = data.nextRound;
-    if (nr && nr.startsAt) return { number: nr.number, at: today(nr.startsAt), label: nr.startsAt, note: nr.note || '' };
+    if (nr && nr.startsAt && today(nr.startsAt).getTime() > Date.now() - 10 * 60000) return { number: nr.number, at: today(nr.startsAt), label: nr.startsAt, note: nr.note || '' };
     const sch = (data.schedule && data.schedule.rounds) || {}; const now = Date.now();
     for (const [n, t] of Object.entries(sch)) { const at = today(t); if (at.getTime() > now - 3 * 60000) return { number: Number(n), at, label: t, note: '' }; }
     if (data.schedule && data.schedule.prizes) { const at = today(data.schedule.prizes); if (at.getTime() > now - 3 * 60000) return { number: null, at, label: data.schedule.prizes, note: 'Prize-giving' }; }

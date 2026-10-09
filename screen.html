@@ -44,17 +44,23 @@
   @keyframes fade { from { opacity: 0; transform: translateY(.4rem); } }
   .head { display: flex; align-items: baseline; gap: 1.2rem; }
   .sec { font-size: 3.4rem; line-height: 1; padding: .1em .45em; border-radius: .9rem; color: #070709; }
+  .sec { background: var(--cyan); }
   .sec.u8 { background: var(--u8); } .sec.u10 { background: var(--u10); } .sec.u12 { background: var(--u12); }
   .title { font-size: 2.6rem; line-height: 1; }
   .sub { color: var(--muted); font-size: 1.3rem; margin-left: auto; align-self: center; }
   table { width: 100%; border-collapse: collapse; font-size: 1.95rem; line-height: 1.15; table-layout: fixed; }
   th { text-align: left; color: var(--muted); font-size: .95rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; padding: 0 .6rem .4rem; border-bottom: 2px solid var(--line); }
+  th:first-child, td:first-child { padding-left: 0; }
+  th.bd, th.rank, th.res, th.pts { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: .95rem; font-weight: 600; color: var(--muted); }
+  th.w { text-align: right; }
   td { padding: .42rem .6rem; border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bd { width: 6.5rem; font-family: Sora, sans-serif; font-weight: 800; font-size: 2.3rem; color: var(--muted); text-align: right; padding-right: 1.2rem; }
-  .res { width: 8rem; text-align: center; font-family: Sora, sans-serif; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .bd { width: 6.5rem; font-family: Sora, sans-serif; font-weight: 800; font-size: 2.3rem; color: var(--muted); text-align: left; }
+  .w { text-align: right; }
+  .res { width: 13rem; text-align: center; padding-left: 1.4rem; padding-right: 1.4rem; font-family: Sora, sans-serif; font-weight: 800; font-variant-numeric: tabular-nums; }
   .res .live { display: inline-block; width: 1.6rem; height: .55rem; border-radius: 999px; background: var(--line); }
   .pts { width: 6rem; text-align: right !important; font-family: Sora, sans-serif; font-weight: 800; }
-  .rank { width: 4.5rem; color: var(--muted); font-family: Sora, sans-serif; font-weight: 800; text-align: right !important; padding-right: 1rem; }
+  .rank { width: 6.5rem; color: var(--muted); font-family: Sora, sans-serif; font-weight: 800; text-align: left; }
+  .rank.r1 { color: var(--gold); } .rank.r2 { color: #C9CCD6; } .rank.r3 { color: #D08A4B; }
   .bye { color: var(--muted); font-style: italic; }
   .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem; align-content: start; }
   .big { display: grid; place-items: center; text-align: center; gap: 1rem; }
@@ -69,12 +75,12 @@
   .count .digits.now { color: var(--cyan); font-size: 7rem; }
   .count .what { font-family: Sora, sans-serif; font-weight: 800; font-size: 3rem; }
   .count .where { color: var(--muted); font-size: 1.8rem; }
-  .next .in { color: var(--muted); font-size: 1.3rem; font-variant-numeric: tabular-nums; }
 
   /* bottom bar */
-  .bottom { display: grid; grid-template-columns: auto 1fr auto; gap: 2.4rem; align-items: center; border-top: 2px solid var(--line); padding-top: 1rem; min-height: 5rem; }
-  .next { display: flex; align-items: baseline; gap: .9rem; }
-  .next .t { font-size: 3.2rem; line-height: 1; color: var(--gold); }
+  .bottom { display: grid; grid-template-columns: 27rem 1fr 24rem; gap: 2.4rem; align-items: center; border-top: 2px solid var(--line); padding-top: 1rem; min-height: 5rem; }
+  .next { display: flex; align-items: baseline; gap: .9rem; white-space: nowrap; overflow: hidden; }
+  .next .t { font-size: 3.2rem; line-height: 1; color: var(--gold); font-variant-numeric: tabular-nums; min-width: 8.2rem; }
+  .next .t.now { font-size: 2rem; color: var(--cyan); }
   .next .l { color: var(--muted); font-size: 1.2rem; }
   .ann { border-left: .4rem solid var(--cyan); padding-left: 1rem; font-family: Sora, sans-serif; font-weight: 800; font-size: 1.7rem; line-height: 1.2; letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .ann time { display: block; color: var(--muted); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: .95rem; }
@@ -126,7 +132,7 @@
   function nextRound() {
     const today = (hm) => { const [h, m] = hm.split(':').map(Number); const d = new Date(); d.setHours(h, m, 0, 0); return d; };
     const nr = data.nextRound;
-    if (nr && nr.startsAt) return { number: nr.number, at: today(nr.startsAt), label: nr.startsAt, note: nr.note || '' };
+    if (nr && nr.startsAt && today(nr.startsAt).getTime() > Date.now() - 10 * 60000) return { number: nr.number, at: today(nr.startsAt), label: nr.startsAt, note: nr.note || '' };
     const sch = (data.schedule && data.schedule.rounds) || {}; const now = Date.now();
     for (const [n, t] of Object.entries(sch)) { const at = today(t); if (at.getTime() > now - 3 * 60000) return { number: Number(n), at, label: t, note: '' }; }
     if (data.schedule && data.schedule.prizes) { const at = today(data.schedule.prizes); if (at.getTime() > now - 3 * 60000) return { number: null, at, label: data.schedule.prizes, note: 'Prize-giving' }; }
@@ -208,7 +214,7 @@
     if (s.kind === 'standings') {
       const rows = sec.standings;
       const half = Math.ceil(rows.length / 2);
-      const table = list => { const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', { class: 'rank' }, '#'), el('th', {}, 'Player'), el('th', { class: 'pts' }, 'Pts')))); const tb = el('tbody'); for (const r of list) tb.append(el('tr', {}, el('td', { class: 'rank' }, r.rank), el('td', {}, clean(r.name)), el('td', { class: 'pts' }, r.score ?? ''))); t.append(tb); return t; };
+      const table = list => { const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', { class: 'rank' }, 'Rank'), el('th', {}, 'Player'), el('th', { class: 'pts' }, 'Pts')))); const tb = el('tbody'); for (const r of list) { const n = Number(r.rank); tb.append(el('tr', {}, el('td', { class: 'rank' + (n >= 1 && n <= 3 ? ' r' + n : '') }, r.rank), el('td', {}, clean(r.name)), el('td', { class: 'pts' }, r.score ?? ''))); } t.append(tb); return t; };
       const sub = s.complete ? `after round ${sec.currentRound} of ${sec.totalRounds || 6}` : sec.progress ? `round ${sec.currentRound} in play · ${sec.progress.entered} of ${sec.progress.boards} results in` : `round ${sec.currentRound} in play`;
       return [head('Standings', sub), el('div', { class: 'cols' }, table(rows.slice(0, half)), table(rows.slice(half)))];
     }
@@ -216,13 +222,13 @@
     // pairings
     const sub = s.complete ? `all results in` : s.pages > 1 ? `boards ${s.rows[0]?.board}–${s.rows[s.rows.length - 1]?.board}` : sec.progress ? `${sec.progress.entered} of ${sec.progress.boards} results in` : '';
     const table = list => {
-      const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', { class: 'bd' }, 'Bd'), el('th', {}, 'White'), el('th', { class: 'res' }, ''), el('th', {}, 'Black'))));
+      const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', { class: 'bd' }, 'Board'), el('th', { class: 'w' }, 'White'), el('th', { class: 'res' }, 'Result'), el('th', {}, 'Black'))));
       const tb = el('tbody');
       for (const r of list) {
         const bye = !r.black || /^bye$/i.test(clean(r.black)) || !r.white || /^bye$/i.test(clean(r.white));
         tb.append(el('tr', {},
           el('td', { class: 'bd' }, r.board ?? ''),
-          el('td', { class: bye && !clean(r.white) ? 'bye' : '' }, clean(r.white) || 'bye'),
+          el('td', { class: 'w' + (bye && !clean(r.white) ? ' bye' : '') }, clean(r.white) || 'bye'),
           el('td', { class: 'res' }, r.result ? res(r.result) : bye ? '' : el('span', { class: 'live' })),
           el('td', { class: bye && !clean(r.black) ? 'bye' : '' }, clean(r.black) || 'bye')));
       }
@@ -246,7 +252,8 @@
 
     const nx = $('#next'); nx.replaceChildren();
     const nr = nextRound();
-    if (nr) nx.append(el('span', { class: 't sora' }, nr.label), el('span', { class: 'l' }, nr.number ? `Round ${nr.number} starts` : (nr.note || 'Next')), el('span', { class: 'in', id: 'cdbar' }, ''));
+    if (nr) nx.append(el('span', { class: 't sora', id: 'cdbar' }, mmss(nr.at - Date.now())), el('span', { class: 'l' }, nr.number ? `until round ${nr.number} at ${nr.label}` : `until ${(nr.note || 'next').toLowerCase()} at ${nr.label}`));
+    else nx.append(el('span', { class: 'l' }, 'Next round time appears here.'));
 
     const a = (data.announcements || []).slice(-1)[0];
     const ann = $('#ann');
@@ -259,7 +266,7 @@
     $('#now').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     if (!data) return; const nr = nextRound(); const left = nr ? nr.at.getTime() - Date.now() : null;
     const cd = $('#cd'); if (cd && nr) { if (left > 0) { cd.textContent = mmss(left); cd.classList.remove('now'); } else { cd.textContent = nr.number ? `Round ${nr.number} is starting` : 'Starting now'; cd.classList.add('now'); } }
-    const bar = $('#cdbar'); if (bar && nr) bar.textContent = left > 0 ? `in ${mmss(left)}` : 'now';
+    const bar = $('#cdbar'); if (bar && nr) { if (left > 0) { bar.textContent = mmss(left); bar.classList.remove('now'); } else { bar.textContent = nr.number ? `Round ${nr.number} starting` : 'Starting now'; bar.classList.add('now'); } }
   }
   tick(); setInterval(tick, 1000);
   load(); setInterval(load, REFRESH_MS);
