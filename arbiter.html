@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arbiter results</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .who { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 16px; background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+  .who b { font-family: Sora, sans-serif; }
+  .who .state { font-size: .8rem; color: var(--muted); }
+  .board { display: grid; grid-template-columns: 2.6rem 1fr; gap: 6px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .board .no { font-family: Sora, sans-serif; font-weight: 800; font-size: 1.6rem; line-height: 1; color: var(--muted); }
+  .board .names { display: grid; gap: 2px; }
+  .board .names span { font-weight: 600; }
+  .board .names small { color: var(--muted); font-weight: 500; margin-left: 6px; }
+  .btns { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .btns button { font: inherit; font-family: Sora, sans-serif; font-weight: 800; font-size: 1.15rem; padding: 14px 6px; border-radius: 12px; border: 2px solid var(--line); background: var(--card); color: var(--ink); }
+  .btns button.on { background: var(--ink); color: var(--card); border-color: var(--ink); }
+  .btns button.sent { border-color: var(--live); }
+  .status { grid-column: 1 / -1; font-size: .85rem; color: var(--muted); min-height: 1.2em; }
+  .status.ok { color: var(--win); font-weight: 600; }
+  .status.bad { color: var(--loss); font-weight: 600; }
+  .locked { padding: 24px 16px; text-align: center; color: var(--muted); }
+  .rule { font-size: .85rem; color: var(--muted); margin: 0 0 12px; }
+</style>
+</head>
+<body>
+<div class="who"><div><b id="arb">Arbiter</b><div class="state" id="updated">Loading…</div></div><div class="state" id="mode"></div></div>
+<main id="app">
+  <section class="card" id="locked" hidden><p class="locked">This page needs the arbiter code from your badge. Scan your badge QR code again.</p></section>
+  <section class="card" id="panel" hidden>
+    <div class="tabs" id="sections"></div>
+    <p class="rule" id="roundline"></p>
+    <div id="boards"></div>
+  </section>
+</main>
+<footer class="foot"><p>Results go to the desk and into Tornelo within a minute or two. If a board shows the wrong result, tap the right one; the desk sees both and decides.</p></footer>
+<script>
+(() => {
+  const $ = (s, el = document) => el.querySelector(s);
+  const el = (tag, attrs = {}, ...kids) => { const n = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'class') n.className = v; else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else if (v != null) n.setAttribute(k, v); } for (const k of kids.flat()) if (k != null) n.append(k.nodeType ? k : document.createTextNode(String(k))); return n; };
+  const clean = s => (s || '').replace(/\s+\.$/, '').trim();
+  const params = new URLSearchParams(location.search);
+  const pin = params.get('pin') || '';
+  const hashPin = str => { let x = 5381; for (const ch of String(str)) x = ((x << 5) + x + ch.charCodeAt(0)) >>> 0; return x.toString(36); };
+  const local = !/github\.io$/.test(location.hostname); // served by the poller on the Mac: post straight to it
+  let data = null, open = params.get('section') || null; const sent = {}; // key section|round|board -> {result, at, note}
+  $('#mode').textContent = local ? 'direct to desk' : 'via results form';
+
+  async function load() {
+    try { const r = await fetch(`data/live.json?t=${Date.now()}`, { cache: 'no-store' }); data = await r.json(); render(); }
+    catch { $('#updated').textContent = 'Could not load pairings'; }
+  }
+  function render() {
+    const arbName = data.results && data.results.pins ? data.results.pins[hashPin(pin)] : null;
+    if (!pin || (data.results && data.results.pins && !arbName)) { $('#locked').hidden = false; $('#panel').hidden = true; $('#arb').textContent = 'Arbiter'; return; }
+    $('#arb').textContent = arbName || 'Arbiter'; $('#locked').hidden = true; $('#panel').hidden = false;
+    $('#updated').textContent = `Pairings as of ${new Date(data.generatedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+    const secs = Object.values(data.sections); if (!open || !data.sections[open]) open = secs[0].slug;
+    const tabs = $('#sections'); tabs.replaceChildren();
+    for (const s of secs) tabs.append(el('button', { role: 'tab', 'aria-selected': String(s.slug === open), onclick: () => { open = s.slug; render(); } }, s.name));
+    const sec = data.sections[open]; const box = $('#boards'); box.replaceChildren();
+    if (!sec.currentRound) { $('#roundline').textContent = 'No round published yet.'; return; }
+    const rows = sec.rounds[sec.currentRound] || [];
+    const done = rows.filter(r => r.result && r.black).length, total = rows.filter(r => r.black).length;
+    $('#roundline').textContent = `Round ${sec.currentRound} · ${done} of ${total} results in Tornelo`;
+    for (const r of rows) {
+      if (!r.black || /^bye$/i.test(clean(r.black))) continue;
+      const key = `${sec.slug}|${sec.currentRound}|${r.board}`; const s = sent[key];
+      const inT = r.result ? r.result.replace(/½/g, '1/2') : null;
+      const b = el('div', { class: 'board' },
+        el('div', { class: 'no' }, r.board),
+        el('div', { class: 'names' }, el('div', {}, el('span', {}, clean(r.white)), el('small', {}, 'White')), el('div', {}, el('span', {}, clean(r.black)), el('small', {}, 'Black'))),
+        el('div', { class: 'btns' }, ...[['1-0', '1 – 0'], ['1/2-1/2', '½ – ½'], ['0-1', '0 – 1']].map(([v, label]) =>
+          el('button', { class: (inT === v ? 'on' : '') + (s && s.result === v && inT !== v ? ' sent' : ''), onclick: () => send(sec, r, v, key) }, label))),
+        el('div', { class: 'status ' + (inT ? 'ok' : s ? (s.note ? 'bad' : '') : '') }, inT ? 'In Tornelo ✓' : s ? (s.note || `Sent ${s.at} · waiting for Tornelo`) : ''));
+      box.append(b);
+    }
+  }
+  async function send(sec, r, result, key) {
+    const payload = { section: sec.slug, round: sec.currentRound, board: r.board, result, pin, white: clean(r.white), black: clean(r.black) };
+    sent[key] = { result, at: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }; render();
+    try {
+      if (local) {
+        const res = await fetch('/api/result', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error(await res.text());
+      } else {
+        const f = data.results && data.results.form; if (!f) throw new Error('results form not configured');
+        const body = new URLSearchParams(); body.set(f.fields.packed, `RESULT|${payload.section}|${payload.round}|${payload.board}|${payload.result}|${payload.pin}`); body.set(f.fields.marker, 'result');
+        await fetch(f.action, { method: 'POST', mode: 'no-cors', body });
+      }
+    } catch (e) { sent[key].note = 'Not sent: ' + e.message + '. Tell the desk.'; render(); }
+  }
+  load(); setInterval(load, 15000);
+})();
+</script>
+</body>
+</html>
