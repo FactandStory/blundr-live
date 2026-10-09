@@ -10,7 +10,9 @@
 <link rel="stylesheet" href="style.css">
 <style>
   .who { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 16px; background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
-  .who b { font-family: Sora, sans-serif; }
+  .who b { font-family: Sora, sans-serif; display: block; }
+  .who .logo { height: 20px; width: auto; display: block; margin-bottom: 4px; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .who .logo { filter: invert(1) hue-rotate(180deg); } }
   .who .state { font-size: .8rem; color: var(--muted); }
   .board { display: grid; grid-template-columns: 2.6rem 1fr; gap: 6px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
   .board .no { font-family: Sora, sans-serif; font-weight: 800; font-size: 1.6rem; line-height: 1; color: var(--muted); }
@@ -31,7 +33,7 @@
 </style>
 </head>
 <body>
-<div class="who"><div><b id="event">Bristol Junior Open</b><div class="state"><span id="arb">Arbiter</span> · <span id="updated">Loading…</span></div></div><div class="state" id="mode"></div></div>
+<div class="who"><div><img class="logo" src="img/logo.png" alt="blundr" width="2118" height="420"><b id="event">Bristol Junior Open</b><div class="state"><span id="arb">Arbiter</span> · <span id="updated">Loading…</span></div></div><div class="state" id="mode"></div></div>
 <main id="app">
   <section class="card" id="locked" hidden><p class="locked">This page needs the arbiter code from your badge. Scan your badge QR code again.</p></section>
   <section class="card" id="panel" hidden>
@@ -41,7 +43,7 @@
     <div id="boards"></div>
   </section>
 </main>
-<footer class="foot"><p>Results go to the desk and into Tornelo within a minute or two. If a board shows the wrong result, tap the right one; the desk sees both and decides.</p></footer>
+<footer class="foot"><p>Results go to the desk and into Tornelo within a minute or two. If a board shows the wrong result, tap the right one; the desk sees both and decides.</p><p>chess, done brilliantly · blundrchess.com</p></footer>
 <script>
 (() => {
   const $ = (s, el = document) => el.querySelector(s);
