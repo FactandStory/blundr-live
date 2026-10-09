@@ -130,3 +130,6 @@ th.num.tb, td.num.tb { color: var(--muted); }
 .find.later h1 { font-size: 1.1rem; }
 .find.later input[type=search] { font-size: 1rem; padding: 10px 12px; }
 .now .board small { margin-top: 2px; }
+
+.pill { white-space: nowrap; }
+td.num .pill { font-size: .78rem; }
