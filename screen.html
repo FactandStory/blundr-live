@@ -114,7 +114,8 @@
   const DWELL = Math.max(4, Number(params.get('secs')) || 10) * 1000;
   const PIN = params.get('section');
   const ROWS = Math.max(6, Number(params.get('rows')) || 12);
-  const DATA_URL = 'data/live.json';
+  const LOCAL_URL = 'data/live.json', PUBLIC_URL = 'https://factandstory.github.io/blundr-live/data/live.json';
+  let DATA_URL = LOCAL_URL; // if the iMac stops answering (Wi-Fi isolation, iMac asleep), fall back to the public copy and keep trying the iMac now and then
   const REFRESH_MS = 20000;
 
   const $ = s => document.querySelector(s);
@@ -150,6 +151,7 @@
       if (idx < 0) step(); else showSlide(idx, false);
     } catch (e) {
       failures++;
+      if (failures >= 2 && DATA_URL === LOCAL_URL && !/github\.io$/.test(location.hostname)) { DATA_URL = PUBLIC_URL; failures = 0; $('#updated').textContent = 'Desk unreachable; using the public copy'; return load(); }
       if (failures >= 2) { $('#updated').textContent = data ? 'Connection lost. Showing the last update.' : 'Waiting for data…'; $('#chip').classList.add('stale'); }
     }
   }
@@ -271,6 +273,7 @@
   }
   tick(); setInterval(tick, 1000);
   load(); setInterval(load, REFRESH_MS);
+  setInterval(async () => { if (DATA_URL !== PUBLIC_URL) return; try { const r = await fetch(`${LOCAL_URL}?t=${Date.now()}`, { cache: 'no-store' }); if (r.ok) { DATA_URL = LOCAL_URL; failures = 0; } } catch {} }, 120000);
   document.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === ' ') step(); if (e.key === 'ArrowLeft') { idx = (idx - 2 + slides.length) % slides.length; step(); } });
   // reload once an hour to shake off anything odd
   setTimeout(() => location.reload(), 3600000);
