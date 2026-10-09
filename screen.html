@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bristol Junior Open · hall screen</title>
+<meta name="description" content="Big-screen display for the playing hall: current pairings one section at a time, next-round time and the latest announcement. Reads data/live.json like the parents' page.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Everything scales with the screen height, so 1080p and 4K look the same. 1rem ≈ 20px at 1080. */
+  :root {
+    --bg: #070709; --ink: #F4F4F8; --muted: #B9B8C9; --line: #24242e; --panel: #101016;
+    --cyan: #16C7FF; --gold: #F2C24E;
+    --u8: #19D6A6; --u10: #FF7A45; --u12: #A07BFF;
+    --live: #16C7FF; --stale: #FF7A45;
+  }
+  * { box-sizing: border-box; }
+  html { font-size: 1.85vh; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); cursor: none; }
+  body { font: 1rem/1.3 'Plus Jakarta Sans', system-ui, sans-serif; display: grid; grid-template-rows: auto 1fr auto; padding: 1.6rem 2.4rem 1.4rem; gap: 1rem; }
+  .sora { font-family: Sora, 'Plus Jakarta Sans', system-ui, sans-serif; font-weight: 800; letter-spacing: -.02em; }
+
+  /* top bar */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 2rem; }
+  .brand { display: flex; align-items: center; gap: 1.2rem; }
+  .brand img { height: 2.2rem; width: auto; filter: invert(1) hue-rotate(180deg); display: block; }
+  .brand .event { font-weight: 600; font-size: 1.2rem; color: var(--muted); }
+  .chip { display: inline-flex; align-items: center; gap: .5rem; background: var(--cyan); color: #070709; font-weight: 700; font-size: .95rem; padding: .25rem .8rem; border-radius: 999px; letter-spacing: .04em; text-transform: uppercase; }
+  .chip::before { content: ''; width: .6rem; height: .6rem; border-radius: 50%; background: #070709; animation: blink 1.6s infinite; }
+  .chip.stale { background: var(--stale); }
+  .chip.stale::before { animation: none; }
+  @keyframes blink { 50% { opacity: .25; } }
+  .clock { text-align: right; }
+  .clock .time { font-size: 2.6rem; line-height: 1; }
+  .clock .updated { color: var(--muted); font-size: .95rem; margin-top: .2rem; }
+
+  /* main slide */
+  .slide { display: grid; grid-template-rows: auto 1fr; gap: .8rem; min-height: 0; animation: fade .5s ease; }
+  .slide > table, .slide > .cols { align-self: start; }
+  /* density: few boards get bigger type, many boards get tighter rows */
+  .slide.roomy table { font-size: 2.4rem; } .slide.roomy td { padding: .7rem .6rem; } .slide.roomy .bd { font-size: 2.8rem; }
+  .slide.tight table { font-size: 1.75rem; } .slide.tight td { padding: .3rem .6rem; } .slide.tight .bd { font-size: 2rem; }
+  @keyframes fade { from { opacity: 0; transform: translateY(.4rem); } }
+  .head { display: flex; align-items: baseline; gap: 1.2rem; }
+  .sec { font-size: 3.4rem; line-height: 1; padding: .1em .45em; border-radius: .9rem; color: #070709; }
+  .sec.u8 { background: var(--u8); } .sec.u10 { background: var(--u10); } .sec.u12 { background: var(--u12); }
+  .title { font-size: 2.6rem; line-height: 1; }
+  .sub { color: var(--muted); font-size: 1.3rem; margin-left: auto; align-self: center; }
+  table { width: 100%; border-collapse: collapse; font-size: 1.95rem; line-height: 1.15; table-layout: fixed; }
+  th { text-align: left; color: var(--muted); font-size: .95rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; padding: 0 .6rem .4rem; border-bottom: 2px solid var(--line); }
+  td { padding: .42rem .6rem; border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bd { width: 6.5rem; font-family: Sora, sans-serif; font-weight: 800; font-size: 2.3rem; color: var(--muted); text-align: right; padding-right: 1.2rem; }
+  .res { width: 8rem; text-align: center; font-family: Sora, sans-serif; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .res .live { display: inline-block; width: 1.6rem; height: .55rem; border-radius: 999px; background: var(--line); }
+  .pts { width: 6rem; text-align: right !important; font-family: Sora, sans-serif; font-weight: 800; }
+  .rank { width: 4.5rem; color: var(--muted); font-family: Sora, sans-serif; font-weight: 800; text-align: right !important; padding-right: 1rem; }
+  .bye { color: var(--muted); font-style: italic; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem; align-content: start; }
+  .big { display: grid; place-items: center; text-align: center; gap: 1rem; }
+  .big .h { font-size: 4.2rem; line-height: 1.05; max-width: 80vw; }
+  .big .h mark { background: var(--cyan); color: #070709; padding: 0 .25em; border-radius: .2em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  .big .p { color: var(--muted); font-size: 1.8rem; max-width: 70vw; }
+  .big .arrived { font-size: 2rem; color: var(--ink); margin-top: 1rem; }
+
+  /* bottom bar */
+  .bottom { display: grid; grid-template-columns: auto 1fr auto; gap: 2.4rem; align-items: center; border-top: 2px solid var(--line); padding-top: 1rem; min-height: 5rem; }
+  .next { display: flex; align-items: baseline; gap: .9rem; }
+  .next .t { font-size: 3.2rem; line-height: 1; color: var(--gold); }
+  .next .l { color: var(--muted); font-size: 1.2rem; }
+  .ann { border-left: .4rem solid var(--cyan); padding-left: 1rem; font-size: 1.5rem; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .ann time { display: block; color: var(--muted); font-size: .95rem; }
+  .ann.empty { border-color: var(--line); color: var(--muted); }
+  .dots { display: flex; gap: .5rem; }
+  .dots span { width: 1rem; height: 1rem; border-radius: 50%; background: var(--line); }
+  .dots span.on.u8 { background: var(--u8); } .dots span.on.u10 { background: var(--u10); } .dots span.on.u12 { background: var(--u12); }
+  .dots span.on { background: var(--ink); }
+  .foot { color: var(--muted); font-size: .9rem; text-align: right; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><img src="img/logo.png" alt="blundr"><span class="event" id="event-name">Bristol Junior Open</span><span class="chip" id="chip">Live</span></div>
+  <div class="clock"><div class="time sora" id="now">--:--</div><div class="updated" id="updated">Loading…</div></div>
+</header>
+
+<main id="slide" class="slide"></main>
+
+<footer class="bottom">
+  <div class="next" id="next"></div>
+  <div class="ann empty" id="ann">Announcements from the desk appear here.</div>
+  <div><div class="dots" id="dots"></div><div class="foot" id="foot"></div></div>
+</footer>
+
+<script>
+(() => {
+  // ?secs=10 dwell per slide · ?section=u12 pin one section · ?rows=12 rows per page
+  const params = new URLSearchParams(location.search);
+  const DWELL = Math.max(4, Number(params.get('secs')) || 10) * 1000;
+  const PIN = params.get('section');
+  const ROWS = Math.max(6, Number(params.get('rows')) || 12);
+  const DATA_URL = 'data/live.json';
+  const REFRESH_MS = 20000;
+
+  const $ = s => document.querySelector(s);
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) { if (k === 'class') n.className = v; else if (v !== null && v !== undefined) n.setAttribute(k, v); }
+    for (const k of kids.flat()) if (k !== null && k !== undefined) n.append(k.nodeType ? k : document.createTextNode(String(k)));
+    return n;
+  };
+  const clean = s => (s || '').replace(/\s+\.$/, '').trim();
+  const fmtTime = iso => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const res = r => r ? r.split('1/2').join('½').replace('-', '–') : null;
+
+  let data = null, failures = 0, slides = [], idx = -1, timer = null;
+
+  async function load() {
+    try {
+      const r = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status);
+      data = await r.json(); failures = 0;
+      renderChrome(); buildSlides();
+      if (idx < 0) step(); else showSlide(idx, false);
+    } catch (e) {
+      failures++;
+      if (failures >= 2) { $('#updated').textContent = data ? 'Connection lost. Showing the last update.' : 'Waiting for data…'; $('#chip').classList.add('stale'); }
+    }
+  }
+
+  // ---- slides: one per section (paged if long); a standings slide once a round's results are all in
+  function buildSlides() {
+    const out = [];
+    const secs = Object.values(data.sections).filter(s => !PIN || s.slug === PIN);
+    for (const sec of secs) {
+      if (!sec.currentRound) { out.push({ sec, kind: 'waiting' }); continue; }
+      const rows = sec.rounds[sec.currentRound] || [];
+      const complete = sec.progress && sec.progress.boards > 0 && sec.progress.entered >= sec.progress.boards;
+      const paged = [];
+      for (let i = 0; i < rows.length; i += ROWS * 2) paged.push(rows.slice(i, i + ROWS * 2));
+      if (!paged.length) paged.push([]);
+      paged.forEach((rows, i) => out.push({ sec, kind: 'pairings', rows, page: i + 1, pages: paged.length, complete }));
+      if (complete && sec.standings.length) out.push({ sec, kind: 'standings' });
+    }
+    slides = out;
+    if (idx >= slides.length) idx = 0;
+  }
+
+  function step() {
+    if (!slides.length) return;
+    idx = (idx + 1) % slides.length;
+    showSlide(idx, true);
+    clearTimeout(timer); timer = setTimeout(step, DWELL);
+  }
+
+  function showSlide(i, animate) {
+    const s = slides[i]; if (!s) return;
+    const main = $('#slide');
+    main.replaceChildren(...slideNodes(s));
+    const n = s.kind === 'pairings' ? s.rows.length : s.kind === 'standings' ? Math.ceil(s.sec.standings.length / 2) : 0;
+    main.className = 'slide ' + (n && n <= 7 ? 'roomy' : n >= 10 ? 'tight' : '');
+    if (animate) { main.style.animation = 'none'; void main.offsetWidth; main.style.animation = ''; }
+    const dots = $('#dots'); dots.replaceChildren();
+    slides.forEach((x, j) => dots.append(el('span', { class: (j === i ? 'on ' : '') + x.sec.slug })));
+  }
+
+  function slideNodes(s) {
+    const sec = s.sec;
+    const head = (title, sub) => el('div', { class: 'head' }, el('span', { class: `sec sora ${sec.slug}` }, sec.name), el('span', { class: 'title sora' }, title), sub ? el('span', { class: 'sub' }, sub) : null);
+
+    if (s.kind === 'waiting') {
+      const r1 = data.schedule && data.schedule.rounds && data.schedule.rounds['1'];
+      const ci = data.checkin;
+      const here = ci && ci.arrived ? ci.arrived.filter(a => a.section === sec.slug).length : null;
+      const total = (data.roster || []).filter(p => p.section === sec.slug).length;
+      return [head('Round 1', r1 ? `pairings at ${r1}` : ''), el('div', { class: 'big' },
+        el('div', { class: 'h sora' }, 'Welcome to the ', el('mark', {}, 'Bristol Junior Open')),
+        el('div', { class: 'p' }, `${sec.name} pairings appear here as soon as the arbiter publishes them. Find your board number, then sit at that board: White on the left of the number as you face it.`),
+        here !== null && total ? el('div', { class: 'arrived sora' }, `${here} of ${total} checked in`) : null)];
+    }
+
+    if (s.kind === 'standings') {
+      const rows = sec.standings;
+      const half = Math.ceil(rows.length / 2);
+      const table = list => { const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', { class: 'rank' }, '#'), el('th', {}, 'Player'), el('th', { class: 'pts' }, 'Pts')))); const tb = el('tbody'); for (const r of list) tb.append(el('tr', {}, el('td', { class: 'rank' }, r.rank), el('td', {}, clean(r.name)), el('td', { class: 'pts' }, r.score ?? ''))); t.append(tb); return t; };
+      return [head('Standings', `after round ${sec.currentRound} of ${sec.totalRounds || 6}`), el('div', { class: 'cols' }, table(rows.slice(0, half)), table(rows.slice(half)))];
+    }
+
+    // pairings
+    const sub = s.complete ? `all results in` : s.pages > 1 ? `boards ${s.rows[0]?.board}–${s.rows[s.rows.length - 1]?.board}` : sec.progress ? `${sec.progress.entered} of ${sec.progress.boards} results in` : '';
+    const table = list => {
+      const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', { class: 'bd' }, 'Bd'), el('th', {}, 'White'), el('th', { class: 'res' }, ''), el('th', {}, 'Black'))));
+      const tb = el('tbody');
+      for (const r of list) {
+        const bye = !r.black || /^bye$/i.test(clean(r.black)) || !r.white || /^bye$/i.test(clean(r.white));
+        tb.append(el('tr', {},
+          el('td', { class: 'bd' }, r.board ?? ''),
+          el('td', { class: bye && !clean(r.white) ? 'bye' : '' }, clean(r.white) || 'bye'),
+          el('td', { class: 'res' }, r.result ? res(r.result) : bye ? '' : el('span', { class: 'live' })),
+          el('td', { class: bye && !clean(r.black) ? 'bye' : '' }, clean(r.black) || 'bye')));
+      }
+      t.append(tb); return t;
+    };
+    const rows = s.rows;
+    if (!rows.length) return [head(`Round ${sec.currentRound}`, sub), el('div', { class: 'big' }, el('div', { class: 'p' }, 'Pairings are being published. One moment.'))];
+    if (rows.length <= ROWS) return [head(`Round ${sec.currentRound}`, sub), table(rows)];
+    const half = Math.ceil(rows.length / 2);
+    return [head(`Round ${sec.currentRound}`, sub), el('div', { class: 'cols' }, table(rows.slice(0, half)), table(rows.slice(half)))];
+  }
+
+  // ---- top and bottom bars
+  function renderChrome() {
+    $('#event-name').textContent = data.event.name;
+    const gen = new Date(data.generatedAt);
+    const ageMin = (Date.now() - gen) / 60000;
+    const age = ageMin > 90 ? `${Math.round(ageMin / 60)} h ago` : `${Math.round(ageMin)} min ago`;
+    $('#updated').textContent = `Updated ${fmtTime(data.generatedAt)}` + (ageMin > 5 ? ` · ${age}` : '');
+    $('#chip').classList.toggle('stale', ageMin > 5);
+
+    const nx = $('#next'); nx.replaceChildren();
+    if (data.nextRound && (data.nextRound.startsAt || data.nextRound.number)) {
+      nx.append(el('span', { class: 't sora' }, data.nextRound.startsAt || ''), el('span', { class: 'l' }, `Round ${data.nextRound.number || ''} starts${data.nextRound.note ? ' · ' + data.nextRound.note : ''}`));
+    } else if (data.schedule && data.schedule.rounds) {
+      // no desk time set: show the next scheduled round after now
+      const now = new Date(); const hm = now.getHours() * 60 + now.getMinutes();
+      const next = Object.entries(data.schedule.rounds).find(([, t]) => { const [h, m] = t.split(':').map(Number); return h * 60 + m > hm; });
+      if (next) nx.append(el('span', { class: 't sora' }, next[1]), el('span', { class: 'l' }, `Round ${next[0]} scheduled`));
+      else if (data.schedule.prizes) nx.append(el('span', { class: 't sora' }, data.schedule.prizes), el('span', { class: 'l' }, 'Prize-giving'));
+    }
+
+    const a = (data.announcements || []).slice(-1)[0];
+    const ann = $('#ann');
+    if (a) { ann.className = 'ann'; ann.replaceChildren(el('time', {}, `From the desk · ${fmtTime(a.at)}`), document.createTextNode(a.text)); }
+    else { ann.className = 'ann empty'; ann.textContent = 'Announcements from the desk appear here.'; }
+    $('#foot').textContent = 'Full results on your phone: factandstory.github.io/blundr-live';
+  }
+
+  function tick() { $('#now').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
+  tick(); setInterval(tick, 1000);
+  load(); setInterval(load, REFRESH_MS);
+  document.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === ' ') step(); if (e.key === 'ArrowLeft') { idx = (idx - 2 + slides.length) % slides.length; step(); } });
+  // reload once an hour to shake off anything odd
+  setTimeout(() => location.reload(), 3600000);
+})();
+</script>
+</body>
+</html>

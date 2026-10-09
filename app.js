@@ -113,6 +113,18 @@
     renderBrowse();
     renderSections();
     renderBoards();
+    renderTimetable();
+  }
+
+  function renderTimetable() {
+    const box = $('#timetable'); if (!box) return;
+    const sch = data.schedule || {}; box.replaceChildren();
+    for (const [n, t] of Object.entries(sch.rounds || {})) box.append(el('b', {}, t), el('span', {}, `Round ${n}`));
+    if (sch.lunch) box.append(el('b', { class: 'lunch' }, sch.lunch), el('span', { class: 'lunch' }, 'Lunch, 45 minutes'));
+    if (sch.prizes) box.append(el('b', { class: 'prizes' }, sch.prizes), el('span', { class: 'prizes' }, 'Prize-giving in the Village Hall'));
+    // keep chronological: lunch sits between rounds 3 and 4
+    const items = [...box.children]; const pairs = []; for (let i = 0; i < items.length; i += 2) pairs.push([items[i], items[i + 1]]);
+    pairs.sort((x, y) => x[0].textContent.localeCompare(y[0].textContent)); box.replaceChildren(...pairs.flat());
   }
 
   function renderFollowed() {
@@ -187,6 +199,7 @@
     if (!sec) return;
     const statusText = sec.status === 'not-paired' ? 'Round 1 not yet paired.' : sec.progress ? `Round ${sec.currentRound} of ${sec.totalRounds}: ${sec.progress.entered} of ${sec.progress.boards} results in.` : '';
     box.append(el('p', { class: 'status' }, statusText));
+    if (sec.standingsUrl) box.append(el('p', { class: 'seclink' }, el('a', { href: sec.pairingsUrl || sec.standingsUrl, target: '_blank', rel: 'noopener' }, `${sec.name} on Tornelo`)));
     if (!sec.standings.length) { box.append(el('p', { class: 'empty' }, 'Standings appear after the first results.')); return; }
     const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', { class: 'num' }, '#'), el('th', {}, 'Player'), el('th', { class: 'num' }, 'Pts'))));
     const tb = el('tbody');
