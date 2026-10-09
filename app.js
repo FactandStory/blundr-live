@@ -82,6 +82,39 @@
     return rounds;
   }
 
+  // ---------- player facts (standings first, roster as fallback)
+  const toNum = v => { if (v == null || v === '') return null; const n = Number(String(v).replace('½', '.5').replace(/[^\d.-]/g, '')); return isNaN(n) ? null : n; };
+  const fmtPts = n => { if (n == null) return '–'; const w = Math.floor(n), h = n - w >= 0.5; return (w || !h ? w : '') + (h ? '½' : '') || '0'; };
+  const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
+  function info(name, sec) {
+    const st = sec.standings.find(x => norm(x.name) === norm(name)) || null;
+    const ro = (data.roster || []).find(x => x.section === sec.slug && norm(x.name) === norm(name)) || null;
+    const rating = (st && st.rating) || (ro && ro.rating) || null;
+    return { st, rating, score: st ? toNum(st.score) : null, rank: st ? st.rank : null, perf: st ? st.perf : null, tiebreak: st ? st.tiebreak : null, delta: st ? st.delta : null };
+  }
+  function oppLine(name, sec) {
+    const i = info(name, sec); const bits = [];
+    if (i.rating) bits.push(`rated ${i.rating}`); else bits.push('unrated');
+    if (i.score != null) bits.push(`${fmtPts(i.score)} pts${i.rank ? ', ' + ordinal(i.rank) : ''}`);
+    return bits.join(' · ');
+  }
+  function ticketBlock(name, sec, hist) {
+    const q = (data.qualify || {})[sec.slug]; if (!q) return null;
+    const me = info(name, sec); const score = me.score ?? 0;
+    const played = hist.filter(h => h.bye || h.outcome).length; const left = Math.max(0, (sec.totalRounds || 6) - played);
+    const targets = Object.entries(q).filter(([k]) => k !== '_how').map(([k, v]) => ({ k, label: k === 'final' ? `the ${sec.name} Final` : `the ${k === 'minor' ? 'Minor' : 'Major'} final`, need: v }));
+    if (!targets.length) return null;
+    const lines = []; let best = null;
+    for (const t of targets.sort((a, b) => a.need - b.need)) {
+      const gap = t.need - score;
+      if (gap <= 0) { best = t; continue; }
+      lines.push(gap <= left ? `${fmtPts(gap)} more ${gap === 1 ? 'point' : 'points'} for ${t.label} (${left} ${left === 1 ? 'game' : 'games'} left)` : `${t.label} is out of reach this time (needs ${fmtPts(t.need)})`);
+    }
+    const head = best ? `Golden Ticket: qualified for ${best.label} ✓` : 'Golden Ticket';
+    return el('div', { class: 'ticket' + (best ? ' done' : '') }, el('b', {}, head), ...(lines.length ? [el('div', { class: 'small' }, lines.join(' · '))] : []),
+      el('div', { class: 'small' }, `Scores out of ${sec.totalRounds || 6}. Qualifying does not enter you; register at ljcc.co.uk afterwards.`));
+  }
+
   // ---------- render
   let render = function () {
     const gen = new Date(data.generatedAt);
@@ -137,17 +170,19 @@
     const hist = playerHistory(name, sec);
     const cur = hist.find(h => h.round === sec.currentRound);
     box.hidden = false;
+    const me = info(name, sec);
     box.replaceChildren(
       el('div', { class: 'head' },
-        el('div', {}, el('div', { class: 'name' }, clean(name)), el('div', { class: 'meta' }, `${sec.name} section`)),
+        el('div', {}, el('div', { class: 'name' }, clean(name)), el('div', { class: 'meta' }, `${sec.name} section${me.rating ? ' · rated ' + me.rating : ' · unrated'}`)),
         el('button', { class: 'forget', onclick: () => { followed = null; safeSet('blundr.follow', null); render(); } }, 'Change player')),
       checkinBlock(name, sec),
       cur ? nowBlock(cur, sec) : el('p', { class: 'empty' }, sec.currentRound ? `No game listed for round ${sec.currentRound}. Please ask at the desk.` : 'Round 1 pairings are not published yet.'),
       el('div', { class: 'stats' },
-        el('div', { class: 'stat' }, el('b', {}, st ? st.score : '–'), el('span', {}, 'points')),
-        el('div', { class: 'stat' }, el('b', {}, st ? `${st.rank}` : '–'), el('span', {}, `of ${sec.standings.length || '–'}`)),
-        el('div', { class: 'stat' }, el('b', {}, `${sec.currentRound || 0}/${sec.totalRounds || 6}`), el('span', {}, 'rounds'))),
-      historyTable(hist));
+        el('div', { class: 'stat' }, el('b', {}, fmtPts(me.score)), el('span', {}, 'points'), el('span', { class: 'sub' }, `of ${sec.totalRounds || 6} possible`)),
+        el('div', { class: 'stat' }, el('b', {}, me.rank ? ordinal(me.rank) : '–'), el('span', {}, 'place'), el('span', { class: 'sub' }, `of ${sec.standings.length || '–'} in ${sec.name}`)),
+        el('div', { class: 'stat' }, el('b', {}, me.perf ?? '–'), el('span', {}, 'performance'), el('span', { class: 'sub' }, me.delta ? `rating ${me.delta.startsWith('-') ? '' : '+'}${me.delta} so far` : 'rating from this event'))),
+      ticketBlock(name, sec, hist),
+      historyTable(hist, sec));
   }
 
   // Check-in: shown until round 1 is paired. Opens the pre-filled form; one tap on Submit there.
@@ -171,17 +206,20 @@
     return el('div', { class: 'now' },
       el('div', { class: 'board' }, h.board, el('small', {}, `${sec.name} board`)),
       el('div', { class: 'detail' },
-        el('strong', {}, `Round ${h.round} v ${clean(h.opponent) || 'TBC'}`),
+        el('strong', {}, `Round ${h.round} v `, el('button', { class: 'linklike', onclick: () => follow(h.opponent, sec.slug) }, clean(h.opponent) || 'TBC')),
+        el('span', { class: 'small' }, h.opponent ? oppLine(h.opponent, sec) : ''),
         el('span', {}, el('span', { class: `pill ${h.colour.toLowerCase()}` }, h.colour), ' ', pill, h.result ? ` ${h.result.replace('-', ' – ')}` : '')));
   }
 
-  function historyTable(hist) {
+  function historyTable(hist, sec) {
     const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', {}, 'Rd'), el('th', {}, 'Opponent'), el('th', {}, 'Colour'), el('th', { class: 'num' }, 'Result'))));
     const tb = el('tbody');
     for (const h of hist) {
       if (h.bye) { tb.append(el('tr', {}, el('td', {}, h.round), el('td', {}, 'Bye'), el('td', {}, '–'), el('td', { class: 'num' }, '1'))); continue; }
       const label = h.outcome === 'win' ? 'Won' : h.outcome === 'loss' ? 'Lost' : h.outcome === 'draw' ? 'Draw' : 'Playing';
-      tb.append(el('tr', {}, el('td', {}, h.round), el('td', {}, `${clean(h.opponent) || 'TBC'} `, el('span', { class: 'small' }, `(board ${h.board})`)), el('td', {}, h.colour), el('td', { class: 'num' }, el('span', { class: `pill ${h.outcome || 'live'}` }, label))));
+      tb.append(el('tr', {}, el('td', {}, h.round),
+        el('td', {}, el('div', { class: 'opp' }, el('button', { class: 'linklike', onclick: () => follow(h.opponent, sec.slug) }, clean(h.opponent) || 'TBC'), el('span', { class: 'meta' }, `${oppLine(h.opponent, sec)} · board ${h.board}`))),
+        el('td', {}, h.colour), el('td', { class: 'num' }, el('span', { class: `pill ${h.outcome || 'live'}` }, label))));
     }
     t.append(tb);
     return t;
@@ -201,10 +239,15 @@
     box.append(el('p', { class: 'status' }, statusText));
     if (sec.standingsUrl) box.append(el('p', { class: 'seclink' }, el('a', { href: sec.pairingsUrl || sec.standingsUrl, target: '_blank', rel: 'noopener' }, `${sec.name} on Tornelo`)));
     if (!sec.standings.length) { box.append(el('p', { class: 'empty' }, 'Standings appear after the first results.')); return; }
-    const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', { class: 'num' }, '#'), el('th', {}, 'Player'), el('th', { class: 'num' }, 'Pts'))));
+    const hasTb = sec.standings.some(x => x.tiebreak != null), hasPerf = sec.standings.some(x => x.perf != null), hasRtg = sec.standings.some(x => x.rating != null);
+    const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', { class: 'num' }, '#'), el('th', {}, 'Player'), hasRtg ? el('th', { class: 'num' }, 'Rtg') : null, el('th', { class: 'num' }, 'Pts'), hasTb ? el('th', { class: 'num tb' }, 'BH') : null, hasPerf ? el('th', { class: 'num tb' }, 'Perf') : null)));
     const tb = el('tbody');
-    for (const s of sec.standings) tb.append(el('tr', { class: followed && followed.name === s.name ? 'me' : '' }, el('td', { class: 'num' }, s.rank), el('td', {}, el('button', { class: 'linklike', onclick: () => follow(s.name, sec.slug) }, clean(s.name))), el('td', { class: 'num' }, s.score ?? '')));
+    for (const s of sec.standings) tb.append(el('tr', { class: followed && norm(followed.name) === norm(s.name) ? 'me' : '' },
+      el('td', { class: 'num' }, s.rank), el('td', {}, el('button', { class: 'linklike', onclick: () => follow(s.name, sec.slug) }, clean(s.name))),
+      hasRtg ? el('td', { class: 'num' }, s.rating ?? '') : null, el('td', { class: 'num' }, s.score ?? ''),
+      hasTb ? el('td', { class: 'num tb' }, s.tiebreak ?? '') : null, hasPerf ? el('td', { class: 'num tb' }, s.perf ?? '') : null));
     t.append(tb); box.append(t);
+    box.append(el('p', { class: 'standings-note' }, [hasTb ? 'BH is the Buchholz tiebreak: the total points of everyone you have played. Higher breaks a tie.' : null, hasPerf ? 'Perf is your performance rating in this event so far.' : null, 'Tap a name to follow that player.'].filter(Boolean).join(' ')));
   }
 
   function renderBoards() {

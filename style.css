@@ -34,8 +34,6 @@ h2 { font-size: 1rem; margin: 0 0 .5rem; color: var(--muted); font-weight: 600; 
 .brand { display: grid; gap: 4px; }
 .event { font-size: .9rem; }
 .logo { height: 22px; width: auto; display: block; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .logo { filter: invert(1) hue-rotate(180deg); } }
-:root[data-theme="dark"] .logo { filter: invert(1) hue-rotate(180deg); }
 .event { font-weight: 600; }
 .updated { font-size: .8rem; color: var(--muted); text-align: right; }
 .updated.stale { color: var(--loss); font-weight: 600; }
@@ -107,3 +105,15 @@ td .small { color: var(--muted); font-size: .8rem; }
 .plain { list-style: none; padding: 0; margin: 0 0 10px; display: grid; gap: 6px; }
 .plain li { font-size: .95rem; }
 .seclink { font-size: .85rem; color: var(--muted); margin: 0 0 8px; }
+
+.stats { grid-template-columns: repeat(3, 1fr); }
+.stat b { font-family: Sora, system-ui, sans-serif; }
+.stat .sub { display: block; font-size: .75rem; color: var(--muted); margin-top: 2px; }
+.ticket { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--bg); border-left: 5px solid var(--accent); }
+.ticket b { font-family: Sora, system-ui, sans-serif; }
+.ticket .small { margin-top: 4px; }
+.ticket.done { border-left-color: var(--win); }
+.opp { display: grid; gap: 1px; }
+.opp .meta { font-size: .78rem; color: var(--muted); }
+.standings-note { font-size: .78rem; color: var(--muted); margin: 8px 0 0; }
+th.num.tb, td.num.tb { color: var(--muted); }
