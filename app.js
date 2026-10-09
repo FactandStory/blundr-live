@@ -115,6 +115,25 @@
       el('div', { class: 'small' }, `Scores out of ${sec.totalRounds || 6}. Qualifying does not enter you; register at ljcc.co.uk afterwards.`));
   }
 
+  // ---------- next round and countdown (desk setting first, printed timetable as fallback)
+  function nextRound() {
+    const today = (hm) => { const [h, m] = hm.split(':').map(Number); const d = new Date(); d.setHours(h, m, 0, 0); return d; };
+    const nr = data.nextRound;
+    if (nr && nr.startsAt) return { number: nr.number, at: today(nr.startsAt), label: nr.startsAt, note: nr.note || '' };
+    const sch = (data.schedule && data.schedule.rounds) || {}; const now = Date.now();
+    for (const [n, t] of Object.entries(sch)) { const at = today(t); if (at.getTime() > now - 3 * 60000) return { number: Number(n), at, label: t, note: '' }; }
+    if (data.schedule && data.schedule.prizes) { const at = today(data.schedule.prizes); if (at.getTime() > now - 3 * 60000) return { number: null, at, label: data.schedule.prizes, note: 'Prize-giving' }; }
+    return null;
+  }
+  const mmss = ms => { const s = Math.max(0, Math.round(ms / 1000)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? h + ':' : '') + String(m).padStart(h ? 2 : 1, '0') + ':' + String(x).padStart(2, '0'); };
+  function tickCountdown() {
+    const cd = $('#cd'); if (!cd || !data) return; const nr = nextRound(); if (!nr) return;
+    const left = nr.at.getTime() - Date.now();
+    cd.textContent = left > 0 ? mmss(left) : (nr.number ? `Round ${nr.number} starting` : 'Starting now');
+    cd.classList.toggle('soon', left > 0 && left < 5 * 60000);
+  }
+  setInterval(tickCountdown, 1000);
+
   // ---------- render
   let render = function () {
     const gen = new Date(data.generatedAt);
@@ -134,13 +153,14 @@
     for (const a of items) list.append(el('li', {}, el('time', {}, fmtTime(a.at)), el('div', {}, a.text)));
 
     // next round
-    const nr = $('#next-round');
-    if (data.nextRound && (data.nextRound.startsAt || data.nextRound.number)) {
-      nr.hidden = false;
-      nr.replaceChildren(
-        el('div', {}, el('div', { class: 'big' }, data.nextRound.startsAt || ''), el('div', { class: 'sub' }, `Round ${data.nextRound.number || ''} starts`)),
-        el('div', { class: 'sub' }, data.nextRound.note || 'Players to their boards five minutes before. Pairings appear here as soon as they are published.'));
-    } else nr.hidden = true;
+    const nrBox = $('#next-round'); const nr = nextRound();
+    if (nr) {
+      nrBox.hidden = false;
+      nrBox.replaceChildren(
+        el('div', {}, el('div', { class: 'big', id: 'cd' }, ''), el('div', { class: 'sub' }, nr.number ? `Round ${nr.number} starts at ${nr.label}` : `${nr.note || 'Next'} at ${nr.label}`)),
+        el('div', { class: 'sub' }, nr.note && nr.number ? nr.note : 'Players to the Pavilion five minutes before. Parents stay in the Village Hall.'));
+      tickCountdown();
+    } else nrBox.hidden = true;
 
     renderFollowed();
     renderBrowse();

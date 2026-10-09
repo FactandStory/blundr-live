@@ -63,13 +63,21 @@
   .big .p { color: var(--muted); font-size: 1.8rem; max-width: 70vw; }
   .big .arrived { font-size: 2rem; color: var(--ink); margin-top: 1rem; }
 
+  /* countdown slide */
+  .count { display: grid; place-items: center; text-align: center; gap: .6rem; }
+  .count .digits { font-family: Sora, sans-serif; font-weight: 800; font-size: 13rem; line-height: 1; letter-spacing: -.04em; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .count .digits.now { color: var(--cyan); font-size: 7rem; }
+  .count .what { font-family: Sora, sans-serif; font-weight: 800; font-size: 3rem; }
+  .count .where { color: var(--muted); font-size: 1.8rem; }
+  .next .in { color: var(--muted); font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+
   /* bottom bar */
   .bottom { display: grid; grid-template-columns: auto 1fr auto; gap: 2.4rem; align-items: center; border-top: 2px solid var(--line); padding-top: 1rem; min-height: 5rem; }
   .next { display: flex; align-items: baseline; gap: .9rem; }
   .next .t { font-size: 3.2rem; line-height: 1; color: var(--gold); }
   .next .l { color: var(--muted); font-size: 1.2rem; }
-  .ann { border-left: .4rem solid var(--cyan); padding-left: 1rem; font-size: 1.5rem; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .ann time { display: block; color: var(--muted); font-size: .95rem; }
+  .ann { border-left: .4rem solid var(--cyan); padding-left: 1rem; font-family: Sora, sans-serif; font-weight: 800; font-size: 1.9rem; line-height: 1.2; letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ann time { display: block; color: var(--muted); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: .95rem; }
   .ann.empty { border-color: var(--line); color: var(--muted); }
   .dots { display: flex; gap: .5rem; }
   .dots span { width: 1rem; height: 1rem; border-radius: 50%; background: var(--line); }
@@ -114,6 +122,17 @@
   const res = r => r ? r.split('1/2').join('½').replace('-', '–') : null;
 
   let data = null, failures = 0, slides = [], idx = -1, timer = null;
+  // next round: desk setting first, printed timetable as fallback. Returns { number, at: Date, label, note } or null
+  function nextRound() {
+    const today = (hm) => { const [h, m] = hm.split(':').map(Number); const d = new Date(); d.setHours(h, m, 0, 0); return d; };
+    const nr = data.nextRound;
+    if (nr && nr.startsAt) return { number: nr.number, at: today(nr.startsAt), label: nr.startsAt, note: nr.note || '' };
+    const sch = (data.schedule && data.schedule.rounds) || {}; const now = Date.now();
+    for (const [n, t] of Object.entries(sch)) { const at = today(t); if (at.getTime() > now - 3 * 60000) return { number: Number(n), at, label: t, note: '' }; }
+    if (data.schedule && data.schedule.prizes) { const at = today(data.schedule.prizes); if (at.getTime() > now - 3 * 60000) return { number: null, at, label: data.schedule.prizes, note: 'Prize-giving' }; }
+    return null;
+  }
+  const mmss = ms => { const s = Math.max(0, Math.round(ms / 1000)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? h + ':' : '') + String(m).padStart(h ? 2 : 1, '0') + ':' + String(x).padStart(2, '0'); };
 
   async function load() {
     try {
@@ -142,6 +161,8 @@
       paged.forEach((rows, i) => out.push({ sec, kind: 'pairings', rows, page: i + 1, pages: paged.length, complete }));
       if (sec.standings.length) out.push({ sec, kind: 'standings', complete });
     }
+    const nr = nextRound();
+    if (nr && nr.at.getTime() - Date.now() > -2 * 60000) out.unshift({ kind: 'countdown', sec: { slug: 'clock' } });
     slides = out;
     if (idx >= slides.length) idx = 0;
   }
@@ -168,6 +189,11 @@
     const sec = s.sec;
     const head = (title, sub) => el('div', { class: 'head' }, el('span', { class: `sec sora ${sec.slug}` }, sec.name), el('span', { class: 'title sora' }, title), sub ? el('span', { class: 'sub' }, sub) : null);
 
+    if (s.kind === 'countdown') {
+      const nr = nextRound(); if (!nr) return [el('div', { class: 'count' }, el('div', { class: 'what' }, 'Next round soon'))];
+      const what = nr.number ? `Round ${nr.number} starts at ${nr.label}` : `${nr.note || 'Next'} at ${nr.label}`;
+      return [el('div', { class: 'count' }, el('div', { class: 'digits', id: 'cd' }, mmss(nr.at - Date.now())), el('div', { class: 'what' }, what), el('div', { class: 'where' }, nr.note && nr.number ? nr.note : 'Players to the Pavilion five minutes before. Parents stay in the Village Hall.'))];
+    }
     if (s.kind === 'waiting') {
       const r1 = data.schedule && data.schedule.rounds && data.schedule.rounds['1'];
       const ci = data.checkin;
@@ -219,15 +245,8 @@
     $('#chip').classList.toggle('stale', ageMin > 5);
 
     const nx = $('#next'); nx.replaceChildren();
-    if (data.nextRound && (data.nextRound.startsAt || data.nextRound.number)) {
-      nx.append(el('span', { class: 't sora' }, data.nextRound.startsAt || ''), el('span', { class: 'l' }, `Round ${data.nextRound.number || ''} starts${data.nextRound.note ? ' · ' + data.nextRound.note : ''}`));
-    } else if (data.schedule && data.schedule.rounds) {
-      // no desk time set: show the next scheduled round after now
-      const now = new Date(); const hm = now.getHours() * 60 + now.getMinutes();
-      const next = Object.entries(data.schedule.rounds).find(([, t]) => { const [h, m] = t.split(':').map(Number); return h * 60 + m > hm; });
-      if (next) nx.append(el('span', { class: 't sora' }, next[1]), el('span', { class: 'l' }, `Round ${next[0]} scheduled`));
-      else if (data.schedule.prizes) nx.append(el('span', { class: 't sora' }, data.schedule.prizes), el('span', { class: 'l' }, 'Prize-giving'));
-    }
+    const nr = nextRound();
+    if (nr) nx.append(el('span', { class: 't sora' }, nr.label), el('span', { class: 'l' }, nr.number ? `Round ${nr.number} starts` : (nr.note || 'Next')), el('span', { class: 'in', id: 'cdbar' }, ''));
 
     const a = (data.announcements || []).slice(-1)[0];
     const ann = $('#ann');
@@ -236,7 +255,12 @@
     $('#foot').textContent = 'Full results on your phone: factandstory.github.io/blundr-live';
   }
 
-  function tick() { $('#now').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
+  function tick() {
+    $('#now').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    if (!data) return; const nr = nextRound(); const left = nr ? nr.at.getTime() - Date.now() : null;
+    const cd = $('#cd'); if (cd && nr) { if (left > 0) { cd.textContent = mmss(left); cd.classList.remove('now'); } else { cd.textContent = nr.number ? `Round ${nr.number} is starting` : 'Starting now'; cd.classList.add('now'); } }
+    const bar = $('#cdbar'); if (bar && nr) bar.textContent = left > 0 ? `in ${mmss(left)}` : 'now';
+  }
   tick(); setInterval(tick, 1000);
   load(); setInterval(load, REFRESH_MS);
   document.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === ' ') step(); if (e.key === 'ArrowLeft') { idx = (idx - 2 + slides.length) % slides.length; step(); } });
