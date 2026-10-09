@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bristol Junior Open live</title>
+<meta name="description" content="Live pairings, results and standings for the Bristol Junior Open. Find your child, see their board and follow the day.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><img class="logo" src="img/logo.png" alt="blundr" width="2118" height="420"><span class="event" id="event-name">Bristol Junior Open</span></div>
+  <div class="updated" id="updated">Loading…</div>
+</header>
+
+<main id="app">
+  <section class="card notice" id="announcements" hidden>
+    <h2>From the desk</h2>
+    <ul id="announce-list"></ul>
+  </section>
+
+  <section class="card next" id="next-round" hidden></section>
+
+  <section class="card find">
+    <h1>Find a player</h1>
+    <input id="q" type="search" placeholder="Type a first name or surname" autocomplete="off" inputmode="search" aria-label="Find a player">
+    <ul id="matches" class="matches"></ul>
+    <p class="hint">Tap a name to follow that player all day. We remember your choice on this phone.</p>
+    <div id="browse"></div>
+  </section>
+
+  <section class="card player" id="player" hidden></section>
+
+  <section class="card sections" id="sections"></section>
+
+  <section class="card boards" id="boards"></section>
+
+  <section class="card links">
+    <h2>The official record</h2>
+    <p>Everything here is read from Tornelo, the pairing system the arbiters use. If this page and Tornelo ever disagree, Tornelo is right.</p>
+    <p><a id="tornelo-link" href="https://tornelo.com/chess/orgs/blundr/events/bristol-junior-open" target="_blank" rel="noopener">Open the event on Tornelo</a></p>
+    <p class="small">Results appear once an arbiter has entered them at the board. Please don't ask the desk to hurry a result; the arbiters get to every board.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>chess, done brilliantly · <a href="mailto:contact@blundrchess.com">contact@blundrchess.com</a></p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>
