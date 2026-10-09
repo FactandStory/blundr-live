@@ -162,6 +162,7 @@
       tickCountdown();
     } else nrBox.hidden = true;
 
+    renderResultBanner();
     renderFollowed();
     renderBrowse();
     renderSections();
@@ -178,6 +179,24 @@
     // keep chronological: lunch sits between rounds 3 and 4
     const items = [...box.children]; const pairs = []; for (let i = 0; i < items.length; i += 2) pairs.push([items[i], items[i + 1]]);
     pairs.sort((x, y) => x[0].textContent.localeCompare(y[0].textContent)); box.replaceChildren(...pairs.flat());
+  }
+
+  // Big result banner: the followed child's latest result, until the parent taps Got it. Returns for each new round.
+  function renderResultBanner() {
+    const box = $('#result-banner'); if (!box) return;
+    if (!followed) { box.hidden = true; return; }
+    const sec = data.sections[followed.section]; if (!sec || !sec.currentRound) { box.hidden = true; return; }
+    const hist = playerHistory(followed.name, sec);
+    const latest = [...hist].reverse().find(h => h.outcome || h.bye); if (!latest) { box.hidden = true; return; }
+    const key = `blundr.seen.${sec.slug}.${latest.round}.${norm(followed.name)}`;
+    if (safeGet(key)) { box.hidden = true; return; }
+    const first = clean(followed.name).split(' ')[0];
+    const verb = latest.bye ? `${first} has a bye` : latest.outcome === 'win' ? `${first} wins` : latest.outcome === 'draw' ? `${first} draws` : `${first} loses`;
+    const detail = latest.bye ? 'One point, no game this round.' : `Round ${latest.round}, ${latest.colour.toLowerCase()} against ${clean(latest.opponent)} on board ${latest.board}.`;
+    box.className = 'card banner ' + (['u8', 'u10', 'u12'].includes(sec.slug) ? sec.slug : 'other');
+    box.hidden = false;
+    box.replaceChildren(el('div', {}, el('div', { class: 'k' }, `Result · round ${latest.round}`), el('div', { class: 'r' }, verb), el('div', { class: 'd' }, detail)),
+      el('button', { onclick: () => { safeSet(key, 1); render(); } }, 'Got it'));
   }
 
   function renderFollowed() {

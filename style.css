@@ -119,3 +119,10 @@ td .small { color: var(--muted); font-size: .8rem; }
 .opp .meta { font-size: .78rem; color: var(--muted); }
 .standings-note { font-size: .78rem; color: var(--muted); margin: 8px 0 0; }
 th.num.tb, td.num.tb { color: var(--muted); }
+
+.banner { border: 0; color: #070709; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; }
+.banner.u8 { background: #19D6A6; } .banner.u10 { background: #FF7A45; } .banner.u12 { background: #A07BFF; } .banner.other { background: var(--cyan); }
+.banner .k { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; opacity: .75; }
+.banner .r { font-family: Sora, system-ui, sans-serif; font-weight: 800; font-size: 1.6rem; letter-spacing: -.02em; line-height: 1.1; }
+.banner .d { font-size: .9rem; margin-top: 2px; }
+.banner button { font: inherit; font-weight: 700; padding: 10px 14px; border-radius: 10px; border: 2px solid #070709; background: transparent; color: #070709; white-space: nowrap; }
