@@ -258,14 +258,19 @@
   }
 
   function historyTable(hist, sec) {
-    const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', {}, 'Rd'), el('th', {}, 'Opponent'), el('th', {}, 'Colour'), el('th', { class: 'num' }, 'Result'))));
+    const first = clean(followed.name).split(' ')[0];
+    const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', {}, 'Rd'), el('th', {}, `${first}'s games`), el('th', { class: 'num' }, 'Result'))));
     const tb = el('tbody');
     for (const h of hist) {
-      if (h.bye) { tb.append(el('tr', {}, el('td', {}, h.round), el('td', {}, 'Bye'), el('td', {}, '–'), el('td', { class: 'num' }, '1'))); continue; }
-      const label = h.outcome === 'win' ? 'Won' : h.outcome === 'loss' ? 'Lost' : h.outcome === 'draw' ? 'Draw' : 'Playing';
+      if (h.bye) { tb.append(el('tr', {}, el('td', {}, h.round), el('td', {}, 'Bye: no game, one point'), el('td', { class: 'num' }, el('span', { class: 'pill win' }, '+1')))); continue; }
+      const i = info(h.opponent, sec);
+      const oppNow = i.score != null ? `now on ${fmtPts(i.score)} ${i.score === 1 ? 'pt' : 'pts'}${i.rank ? ', ' + ordinal(i.rank) : ''}` : '';
+      const label = h.outcome === 'win' ? `Won ${h.result.replace('-', '–')}` : h.outcome === 'loss' ? `Lost ${h.result.replace('-', '–')}` : h.outcome === 'draw' ? 'Draw ½–½' : 'In play';
       tb.append(el('tr', {}, el('td', {}, h.round),
-        el('td', {}, el('div', { class: 'opp' }, el('button', { class: 'linklike', onclick: () => follow(h.opponent, sec.slug) }, clean(h.opponent) || 'TBC'), el('span', { class: 'meta' }, `${oppLine(h.opponent, sec)} · board ${h.board}`))),
-        el('td', {}, h.colour), el('td', { class: 'num' }, el('span', { class: `pill ${h.outcome || 'live'}` }, label))));
+        el('td', {}, el('div', { class: 'opp' },
+          el('span', {}, 'v ', el('button', { class: 'linklike', onclick: () => follow(h.opponent, sec.slug) }, clean(h.opponent) || 'TBC'), el('span', { class: 'meta' }, i.rating ? ` (rated ${i.rating})` : ' (unrated)')),
+          el('span', { class: 'meta' }, `${first} had ${h.colour} · board ${h.board}${oppNow ? ' · opponent ' + oppNow : ''}`))),
+        el('td', { class: 'num' }, el('span', { class: `pill ${h.outcome || 'live'}` }, label))));
     }
     t.append(tb);
     return t;
