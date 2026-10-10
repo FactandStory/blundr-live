@@ -167,6 +167,7 @@
   const params = new URLSearchParams(location.search);
   const DWELL = Math.max(4, Number(params.get('secs')) || 10) * 1000;
   const PIN = params.get('section');
+  const PAVILION = params.get('pavilion') === '1';   // playing-room screen: pairings and the countdown only, no standings, no interludes
   const ROWS = Math.max(6, Number(params.get('rows')) || 12);
   const LOCAL_URL = 'data/live.json', PUBLIC_URL = 'https://factandstory.github.io/blundr-live/data/live.json';
   let DATA_URL = LOCAL_URL; // if the iMac stops answering (Wi-Fi isolation, iMac asleep), fall back to the public copy and keep trying the iMac now and then
@@ -222,7 +223,7 @@
       for (let i = 0; i < rows.length; i += ROWS * 2) paged.push(rows.slice(i, i + ROWS * 2));
       if (!paged.length) paged.push([]);
       paged.forEach((rows, i) => out.push({ sec, kind: 'pairings', rows, page: i + 1, pages: paged.length, complete }));
-      if (sec.standings.length) out.push({ sec, kind: 'standings', complete });
+      if (sec.standings.length && !PAVILION) out.push({ sec, kind: 'standings', complete });
     }
     const nr = nextRound();
     if (nr && nr.at.getTime() - Date.now() > -2 * 60000) out.unshift({ kind: 'countdown', sec: { slug: 'clock' } });
@@ -233,7 +234,7 @@
   // ---- desk-pushed interlude (a chess lesson) takes over the main area, then the rotation returns by itself
   let lessonView = null, lessonKey = null, lessonStart = 0, lessonFeature = null; const lessonDone = new Set();
   function featureActive() {
-    const f = data && data.feature; if (!f) return null;
+    const f = data && data.feature; if (!f || PAVILION) return null;
     const key = f.id || f.startedAt; if (lessonDone.has(key)) return null;
     if (f.kind === 'lesson') { if (!window.LESSONS || !window.Chess) return null; const L = window.LESSONS.find(l => l.id === f.lesson); if (!L) return null; return { f, L, key }; }
     if (f.kind === 'promo' && window.PROMOS) return { f, key };
