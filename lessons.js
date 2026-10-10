@@ -92,7 +92,7 @@ window.LESSONS = [
     start: '2r3k1/5ppp/8/8/4Q3/8/5PPP/4R1K1',
     steps: [
       { san: 'The position', ops: [], note: 'Both kings sit behind three pawns. White has a queen and rook on open files. Black\'s rook guards the back rank, but only just.', hold: 7000 },
-      { san: '1. Qe8+!', ops: [['e4', 'e8']], note: 'The queen walks into the rook. Black must take: the king cannot.', hold: 6000 },
+      { san: '1. Qe8+!', ops: [['e4', 'e8']], note: 'The queen drops onto the back rank with check, right between the rook and the king. The king cannot take her, so the rook has to.', hold: 6000 },
       { san: '1… Rxe8', ops: [['c8', 'e8']] },
       { san: '2. Rxe8#', ops: [['e1', 'e8']], note: 'Checkmate. The pawns on f7, g7 and h7 block every escape.', hold: 9000 },
     ],
