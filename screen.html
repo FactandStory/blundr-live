@@ -76,6 +76,30 @@
   .count .what { font-family: Sora, sans-serif; font-weight: 800; font-size: 3rem; }
   .count .where { color: var(--muted); font-size: 1.8rem; }
 
+  /* chess interlude */
+  .lesson { display: grid; grid-template-columns: auto 1fr; gap: 3.2rem; min-height: 0; height: 100%; animation: fade .5s ease; }
+  .ls-board { --side: calc(100vh - 17.5rem); width: var(--side); height: var(--side); }
+  .ls-boardbox { width: var(--side); height: var(--side); }
+  .cb { position: relative; width: 100%; height: 100%; border-radius: .6rem; overflow: hidden; box-shadow: 0 0 0 .35rem #1a1a22; }
+  .cb-squares { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); }
+  .cb-sq { position: relative; } .cb-sq.light { background: #EDE7D6; } .cb-sq.dark { background: #5B7A99; }
+  .cb-sq.hi.light { background: #F5E39A; } .cb-sq.hi.dark { background: #C9A64A; }
+  .cb-sq[data-file]::after, .cb-sq[data-rank]::before { position: absolute; font-size: .85rem; font-weight: 700; opacity: .55; }
+  .cb-sq[data-file]::after { content: attr(data-file); right: .3rem; bottom: .1rem; } .cb-sq[data-rank]::before { content: attr(data-rank); left: .3rem; top: .1rem; }
+  .cb-sq.light::after, .cb-sq.light::before { color: #5B7A99; } .cb-sq.dark::after, .cb-sq.dark::before { color: #EDE7D6; }
+  .cb-pieces { position: absolute; inset: 0; pointer-events: none; }
+  .cb-piece { position: absolute; left: 0; top: 0; width: 12.5%; height: 12.5%; transition: transform .65s cubic-bezier(.2,.7,.2,1), opacity .4s; padding: .45%; box-sizing: border-box; }
+  .cb-piece svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 .15rem .2rem rgba(0,0,0,.35)); }
+  .cb-piece.gone { opacity: 0; transform: scale(.6) !important; }
+  .ls-side { display: grid; grid-template-rows: auto auto auto auto 1fr; gap: .8rem; min-width: 0; align-content: start; }
+  .ls-kicker { color: var(--cyan); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-size: 1rem; }
+  .ls-title { font-family: Sora, sans-serif; font-weight: 800; font-size: 3.2rem; line-height: 1.05; letter-spacing: -.02em; }
+  .ls-sub { color: var(--muted); font-size: 1.4rem; }
+  .ls-moves { display: flex; flex-wrap: wrap; gap: .4rem .9rem; font-family: Sora, sans-serif; font-weight: 600; font-size: 1.5rem; color: var(--muted); min-height: 2.2rem; margin-top: .6rem; }
+  .ls-moves .cur { color: #070709; background: var(--gold); padding: 0 .5rem; border-radius: .4rem; }
+  .ls-note { font-size: 2rem; line-height: 1.35; margin-top: 1rem; align-self: start; }
+  .ls-note.intro, .ls-note.outro { font-size: 2.1rem; color: var(--ink); border-left: .4rem solid var(--cyan); padding-left: 1.2rem; }
+
   /* bottom bar */
   .bottom { display: grid; grid-template-columns: 27rem 1fr 24rem; gap: 2.4rem; align-items: center; border-top: 2px solid var(--line); padding-top: 1rem; min-height: 5rem; }
   .next { display: flex; align-items: baseline; gap: .9rem; white-space: nowrap; overflow: hidden; }
@@ -107,6 +131,9 @@
   <div><div class="dots" id="dots"></div><div class="foot" id="foot"></div></div>
 </footer>
 
+<script src="pieces.js"></script>
+<script src="lessons.js"></script>
+<script src="chessboard.js"></script>
 <script>
 (() => {
   // ?secs=10 dwell per slide · ?section=u12 pin one section · ?rows=12 rows per page
@@ -148,7 +175,7 @@
       if (!r.ok) throw new Error(r.status);
       data = await r.json(); failures = 0;
       renderChrome(); buildSlides();
-      if (idx < 0) step(); else showSlide(idx, false);
+      if (featureActive()) startLesson(); else if (lessonView) { stopLesson(); } else if (idx < 0) step(); else showSlide(idx, false);
     } catch (e) {
       failures++;
       if (failures >= 1 && DATA_URL === LOCAL_URL && !/github\.io$/.test(location.hostname)) { DATA_URL = PUBLIC_URL; failures = 0; $('#updated').textContent = 'Desk unreachable; using the public copy'; return load(); }
@@ -174,6 +201,29 @@
     if (nr && nr.at.getTime() - Date.now() > -2 * 60000) out.unshift({ kind: 'countdown', sec: { slug: 'clock' } });
     slides = out;
     if (idx >= slides.length) idx = 0;
+  }
+
+  // ---- desk-pushed interlude (a chess lesson) takes over the main area, then the rotation returns by itself
+  let lessonView = null, lessonKey = null, lessonStart = 0, lessonFeature = null; const lessonDone = new Set();
+  function featureActive() {
+    const f = data && data.feature; if (!f || f.kind !== 'lesson' || !window.LESSONS || !window.Chess) return null;
+    const L = window.LESSONS.find(l => l.id === f.lesson); if (!L) return null;
+    const key = f.id || f.startedAt; if (lessonDone.has(key)) return null;
+    return { f, L, key };
+  }
+  function startLesson() {
+    const a = featureActive(); if (!a || a.key === lessonKey) return;
+    clearTimeout(timer); lessonKey = a.key; lessonFeature = a.f; lessonStart = Date.parse(a.f.startedAt) || Date.now();
+    const main = $('#slide'); main.className = 'slide'; const host = el('div', { class: 'lesson' }); main.replaceChildren(host);
+    lessonView = window.Chess.mountLesson(host, a.L); $('#dots').replaceChildren();
+    lessonView.tick(Date.now() - lessonStart);
+  }
+  function stopLesson() { lessonView = null; lessonKey = null; lessonFeature = null; idx = -1; step(); }
+  function lessonTick() {
+    if (!lessonView) return;
+    let e = Date.now() - lessonStart;
+    if (e >= lessonView.total) { if (lessonFeature.loop) e = e % lessonView.total; else { lessonDone.add(lessonKey); stopLesson(); return; } }
+    lessonView.tick(e);
   }
 
   function step() {
@@ -266,6 +316,7 @@
   }
 
   function tick() {
+    lessonTick();
     $('#now').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     if (!data) return; const nr = nextRound(); const left = nr ? nr.at.getTime() - Date.now() : null;
     const cd = $('#cd'); if (cd && nr) { if (left > 0) { cd.textContent = mmss(left); cd.classList.remove('now'); } else { cd.textContent = nr.number ? `Round ${nr.number} is starting` : 'Starting now'; cd.classList.add('now'); } }
