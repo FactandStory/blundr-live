@@ -26,7 +26,7 @@ window.LESSONS = [
       { san: '7… Qe7', ops: [['d8', 'e7']], note: 'The queen defends f7 but blocks her own bishop in.' },
       { san: '8. Nc3', ops: [['b1', 'c3']], note: 'Morphy could take on b7 and win a pawn. He develops instead.' },
       { san: '8… c6', ops: [['c7', 'c6']] },
-      { san: '9. Bg5', ops: [['c1', 'g5']], note: 'Every White piece is out. Black still has three at home.' },
+      { san: '9. Bg5', ops: [['c1', 'g5']], note: 'Every White piece except the rooks is out. Black still has a knight, a bishop and both rooks at home.' },
       { san: '9… b5', ops: [['b7', 'b5']], note: 'Black tries to push the bishop away.' },
       { san: '10. Nxb5!', ops: [['c3', 'b5']], note: 'A knight for a pawn. The point is the file it opens.', hold: 5500 },
       { san: '10… cxb5', ops: [['c6', 'b5']] },
