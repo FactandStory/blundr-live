@@ -14,9 +14,9 @@ window.PROMOS = [
     enter: 'congress.org.uk/congress/824', contact: 'wellschessclub@outlook.com', colour: '#FF7A45',
   },
   {
-    id: 'sedgemoor', club: 'Sedgemoor Chess Club', title: '2nd Sedgemoor Junior Rapidplay',
-    when: 'Saturday 21 November 2026', where: "St George's Parish Centre, Church Road, Wembdon, Bridgwater TA6 7RP",
-    facts: ['Ages 7 to 14 in three age sections', 'Six rounds of 20-minute games, run like the Megafinals', 'Trophies, medals and a certificate for every child'],
-    enter: 'congress.org.uk/congress/644', contact: 'sedgemoorchess@hotmail.com', colour: '#A07BFF',
+    id: 'sedgemoor', club: 'Sedgemoor Chess Club', title: 'Junior Chess Rapidplay',
+    when: 'Saturday 21 November 2026 · 12:00 to 17:30', where: "St George's Parish Centre, Church Road, Wembdon, Bridgwater TA6 7RP",
+    facts: ['Six ECF-rated Swiss games for children aged 7 to 18', 'Only £17 per child', 'Questions: Sedgemoor Chess Club on Facebook or by email'],
+    enter: 'congress.org.uk/congress/760', contact: 'sedgemoorchess@hotmail.com', colour: '#A07BFF',
   },
 ];
