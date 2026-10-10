@@ -169,7 +169,7 @@
   const ROWS = Math.max(6, Number(params.get('rows')) || 12);
   const LOCAL_URL = 'data/live.json', PUBLIC_URL = 'https://factandstory.github.io/blundr-live/data/live.json';
   let DATA_URL = LOCAL_URL; // if the iMac stops answering (Wi-Fi isolation, iMac asleep), fall back to the public copy and keep trying the iMac now and then
-  const REFRESH_MS = 20000;
+  const REFRESH_MS = /github\.io$/.test(location.hostname) ? 15000 : 4000;   // on the iMac the data is local, so poll fast: desk pushes land within 4 s
 
   const $ = s => document.querySelector(s);
   const el = (tag, attrs = {}, ...kids) => {
