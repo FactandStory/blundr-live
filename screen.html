@@ -66,7 +66,9 @@
   .big { display: grid; place-items: center; text-align: center; gap: 1rem; }
   .big .h { font-size: 4.2rem; line-height: 1.05; max-width: 80vw; }
   .big .h mark { background: var(--cyan); color: #070709; padding: 0 .25em; border-radius: .2em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-  .big .p { color: var(--muted); font-size: 1.8rem; max-width: 70vw; }
+  .big .p { color: var(--muted); font-size: 1.8rem; max-width: 86vw; line-height: 1.4; }
+  .big .lanyard { justify-self: center; border-left: .4rem solid var(--cyan); background: var(--panel); border-radius: .8rem; padding: .8rem 1.4rem; font-size: 1.6rem; line-height: 1.35; text-align: left; max-width: 86vw; }
+  .big .lanyard span { color: var(--cyan); font-weight: 700; }
   .big .arrived { font-size: 2rem; color: var(--ink); margin-top: 1rem; }
 
   /* countdown slide */
@@ -157,6 +159,7 @@
   .next { display: flex; align-items: baseline; gap: .9rem; white-space: nowrap; overflow: hidden; padding-bottom: .35rem; }
   .next > * { flex-shrink: 0; }
   .next .t { font-size: 3.2rem; line-height: 1.15; color: var(--gold); font-variant-numeric: tabular-nums; min-width: 8.2rem; }
+  .next .t.long { font-size: 2.3rem; }   /* h:mm:ss early in the morning */
   .next .t.now { font-size: 2rem; color: var(--cyan); }
   .next .l { color: var(--muted); font-size: 1.2rem; }
   .ann { border-left: .4rem solid var(--cyan); padding-left: 1rem; font-family: Sora, sans-serif; font-weight: 800; font-size: 1.7rem; line-height: 1.2; letter-spacing: -.01em; max-height: 7.6rem; overflow: hidden; }   /* long messages shrink to fit (fitAnn), never cut off */
@@ -346,7 +349,7 @@
     const step = (n, title, desc) => el('div', { class: 'step' }, el('div', { class: 'num' }, n), el('div', {}, el('div', { class: 'st' }, title), el('div', { class: 'sd' }, ...[].concat(desc))));
     const pills = ['u8', 'u10', 'u12'].filter(k => data.sections[k]).map(k => el('span', { class: 'pill', style: `background:var(--${k})` }, data.sections[k].name));
     const steps = [
-      step(1, 'Pick up your child’s lanyard', pills.length ? ['From the lanyard table. The colour band shows the section: ', ...pills] : 'From the lanyard table.'),
+      step(1, 'Pick up your child’s lanyard', ['From the desk at the back of the room. Players wear it all day.', ...(pills.length ? [el('br'), 'Section colours: ', ...pills] : [])]),
       step(2, 'Scan the QR code on it', 'Use your phone camera. It opens your child’s own page.'),
       step(3, 'Tap “We’re here”', 'That checks them in. Then follow their board, opponent and results all day.'),
     ];
@@ -394,7 +397,7 @@
     if (s.kind === 'countdown') {
       const nr = nextRound(); if (!nr) return [el('div', { class: 'count' }, el('div', { class: 'what' }, 'Next round soon'))];
       const what = nr.number ? `Round ${nr.number} starts at ${nr.label}` : `${nr.note || 'Next'} at ${nr.label}`;
-      return [el('div', { class: 'count' }, el('div', { class: 'digits', id: 'cd' }, mmss(nr.at - Date.now())), el('div', { class: 'what' }, what), el('div', { class: 'where' }, nr.note && nr.number ? nr.note : 'Players to the Pavilion five minutes before. Parents stay in the Village Hall.'))];
+      return [el('div', { class: 'count' }, el('div', { class: 'digits', id: 'cd' }, mmss(nr.at - Date.now())), el('div', { class: 'what' }, what), el('div', { class: 'where' }, nr.note && nr.number ? nr.note : ['Players to the Pavilion five minutes before.', el('br'), 'Parents stay in the Village Hall.']))];
     }
     if (s.kind === 'waiting') {
       const r1 = data.schedule && data.schedule.rounds && data.schedule.rounds['1'];
@@ -403,7 +406,8 @@
       const total = (data.roster || []).filter(p => p.section === sec.slug).length;
       return [head('Round 1', r1 ? `pairings at ${r1}` : ''), el('div', { class: 'big' },
         el('div', { class: 'h sora' }, 'Welcome to the', el('br'), el('mark', {}, 'Bristol Junior Open')),
-        el('div', { class: 'p' }, `${sec.name} pairings appear here as soon as the arbiter publishes them. Find your board number, then sit at that board: White on the left of the number as you face it.`),
+        el('div', { class: 'p' }, `${sec.name} pairings appear here as soon as the arbiter publishes them.`, el('br'), 'Find your board number, then sit at that board:', el('br'), 'White on the left of the number as you face it.'),
+        el('div', { class: 'lanyard' }, 'Collect your child’s lanyard from the desk at the back of the room,', el('br'), 'then scan its QR code to check in.', el('br'), el('span', {}, 'Players wear their lanyard all day.')),
         here !== null && total ? el('div', { class: 'arrived sora' }, `${here} of ${total} checked in`) : null)];
     }
 
@@ -472,7 +476,7 @@
     $('#now').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     if (!data) return; const nr = nextRound(); const left = nr ? nr.at.getTime() - Date.now() : null;
     const cd = $('#cd'); if (cd && nr) { if (left > 0) { cd.textContent = mmss(left); cd.classList.remove('now'); } else { cd.textContent = nr.number ? `Round ${nr.number} is starting` : 'Starting now'; cd.classList.add('now'); } }
-    const bar = $('#cdbar'), lab = $('#cdlabel'); if (bar && nr) { if (left > 0) { bar.textContent = mmss(left); bar.classList.remove('now'); if (lab) lab.hidden = false; } else { bar.textContent = nr.number ? `Round ${nr.number} starting` : 'Starting now'; bar.classList.add('now'); if (lab) lab.hidden = true; } }
+    const bar = $('#cdbar'), lab = $('#cdlabel'); if (bar && nr) { if (left > 0) { bar.textContent = mmss(left); bar.classList.remove('now'); bar.classList.toggle('long', bar.textContent.length > 5); if (lab) lab.hidden = false; } else { bar.textContent = nr.number ? `Round ${nr.number} starting` : 'Starting now'; bar.classList.add('now'); if (lab) lab.hidden = true; } }
   }
   tick(); setInterval(tick, 1000);
   load(); setInterval(load, REFRESH_MS);
