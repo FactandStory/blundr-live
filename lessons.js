@@ -131,7 +131,7 @@ window.LESSONS = [
       { san: '1. Nc7+', ops: [['e6', 'c7']], marks: ['e8', 'a8'], note: 'Check! From c7 the knight also attacks the rook on a8. Two targets, one move: a fork.', hold: 6500 },
       { san: '1… Kd7', ops: [['e8', 'd7']], note: 'The king must get out of check. The rook is left behind.' },
       { san: '2. Nxa8', ops: [['c7', 'a8']], note: 'The knight takes the rook. A king and a knight cannot checkmate on their own, so the game is now a draw. White was losing and has saved half a point.', hold: 8000 },
-      { san: 'Same idea, real game', ops: [], position: '2b1r1k1/p1pq1p1p/1p4p1/8/4N3/8/PPP1QPPP/5RK1', note: 'A middlegame. Black has just put the queen on d7, a knight\'s jump from f6, and so has the king on g8. Can you see it?', hold: 8000 },
+      { san: 'Same idea, real game', ops: [], position: '2b1r1k1/p1pq1p1p/1p4p1/8/4N3/8/PPQ2PPP/5RK1', note: 'A middlegame. Black has just put the queen on d7, a knight\'s jump from f6, and so has the king on g8. Can you see it?', hold: 8000 },
       { san: '1. Nf6+', ops: [['e4', 'f6']], marks: ['g8', 'd7'], note: 'Check, and the knight attacks the queen at the same time. A fork on the king and queen has its own name: a royal fork.', hold: 7000 },
       { san: '1… Kg7', ops: [['g8', 'g7']], note: 'The king attacks the knight, but the knight is not staying.' },
       { san: '2. Nxd7', ops: [['f6', 'd7']], note: 'The queen is gone.' },
