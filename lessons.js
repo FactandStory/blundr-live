@@ -74,8 +74,8 @@ window.LESSONS = [
     start: '6k1/8/5K2/4B3/B7/8/8/8',
     steps: [
       { san: 'The position', ops: [], note: 'White: king f6, bishops a4 and e5. Black\'s king is already near the corner.', hold: 6000 },
-      { san: '1. Kg6', ops: [['f6', 'g6']], note: 'The king takes away f7, g7 and h7. The corner is now the only place to go.', hold: 5000 },
-      { san: '1… Kf8', ops: [['g8', 'f8']], note: 'h8 is covered by the dark bishop, so the king goes the other way.' },
+      { san: '1. Kg6', ops: [['f6', 'g6']], note: 'The king takes away f7, g7 and h7, and the dark bishop already covers h8. Only f8 is left.', hold: 5000 },
+      { san: '1… Kf8', ops: [['g8', 'f8']], note: 'The only legal move.' },
       { san: '2. Bd6+', ops: [['e5', 'd6']], note: 'Check. e8 is covered by the light bishop, so back to g8.', hold: 5000 },
       { san: '2… Kg8', ops: [['f8', 'g8']] },
       { san: '3. Bb3+', ops: [['a4', 'b3']], note: 'Check from the other bishop. Only the corner is left.', hold: 5000 },
