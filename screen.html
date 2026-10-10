@@ -129,7 +129,8 @@
   /* welcome (doors open) */
   .welcome { display: grid; grid-template-rows: auto 1fr; gap: 1.6rem; min-height: 0; animation: fade .5s ease; }
   .welcome .kick { color: var(--cyan); font-weight: 700; text-transform: uppercase; letter-spacing: .12em; font-size: 1.2rem; }
-  .welcome .hello { font-family: Sora, sans-serif; font-weight: 800; font-size: 4.5rem; line-height: 1.05; letter-spacing: -.03em; margin-top: .3rem; white-space: nowrap; }
+  .welcome .hello { font-family: Sora, sans-serif; font-weight: 800; font-size: 4rem; line-height: 1.12; letter-spacing: -.03em; margin-top: .3rem; }
+  .welcome .hello mark, .big .h mark { white-space: nowrap; }
   .welcome .hello mark { background: var(--cyan); color: #070709; padding: 0 .2em; border-radius: .15em; }
   .welcome .body { display: grid; grid-template-columns: 1fr 18rem; gap: 2.4rem; min-height: 0; align-items: start; }
   .welcome .steps { display: grid; gap: 1rem; }
@@ -353,7 +354,7 @@
     if (window.qrcode) { const q = qrcode(0, 'M'); q.addData(SITE); q.make(); qr.innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }); }
     const here = el('div', { class: 'here' });
     const host = el('div', { class: 'welcome' },
-      el('div', {}, el('div', { class: 'top2' }, el('div', { class: 'kick' }, 'Good morning, and welcome'), here), el('div', { class: 'hello' }, 'Welcome to the ', el('mark', {}, 'Bristol Junior Open'))),
+      el('div', {}, el('div', { class: 'top2' }, el('div', { class: 'kick' }, 'Good morning, and welcome'), here), el('div', { class: 'hello' }, 'Welcome to the', el('br'), el('mark', {}, 'Bristol Junior Open'))),
       el('div', { class: 'body' },
         el('div', { class: 'steps' }, ...steps),
         el('div', { class: 'side' }, qr, el('div', { class: 'qrcap' }, el('b', {}, 'No lanyard yet?'), ' Scan here and search for your child.'),
@@ -401,7 +402,7 @@
       const here = ci && ci.arrived ? ci.arrived.filter(a => a.section === sec.slug).length : null;
       const total = (data.roster || []).filter(p => p.section === sec.slug).length;
       return [head('Round 1', r1 ? `pairings at ${r1}` : ''), el('div', { class: 'big' },
-        el('div', { class: 'h sora' }, 'Welcome to the ', el('mark', {}, 'Bristol Junior Open')),
+        el('div', { class: 'h sora' }, 'Welcome to the', el('br'), el('mark', {}, 'Bristol Junior Open')),
         el('div', { class: 'p' }, `${sec.name} pairings appear here as soon as the arbiter publishes them. Find your board number, then sit at that board: White on the left of the number as you face it.`),
         here !== null && total ? el('div', { class: 'arrived sora' }, `${here} of ${total} checked in`) : null)];
     }
