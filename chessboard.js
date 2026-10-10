@@ -30,6 +30,7 @@
     const api = {
       set(pos) { layer.replaceChildren(); pieces = {}; for (const [sq, p] of Object.entries(pos)) place(sq, p); api.highlight([]); },
       highlight(sqs) { for (const d of squares.children) d.classList.toggle('hi', sqs.includes(d.dataset.sq)); },
+      mark(sqs) { for (const d of squares.children) d.classList.toggle('mk', sqs.includes(d.dataset.sq)); },
       apply(step, animate = true) {
         const touched = [];
         for (const op of step.ops || []) {
@@ -42,7 +43,7 @@
           if (promo) { el.dataset.piece = promo; el.innerHTML = window.PIECE_SVG[promo]; }
           touched.push(from, to);
         }
-        api.highlight(touched);
+        api.highlight(touched); api.mark(step.marks || []);
       },
     };
     return api;
@@ -85,7 +86,7 @@
         if (s.san) played.push(s.san); lastStep = s;
       }
       if (animate && shown === i - 1 && f.kind === 'step' && !f.step.position) { board.apply(f.step, true); }
-      else { board.set(pos); if (lastStep && f.kind === 'step') board.highlight((lastStep.ops || []).flat().filter(x => x && x.length === 2)); }
+      else { board.set(pos); if (lastStep && f.kind === 'step') { board.highlight((lastStep.ops || []).flat().filter(x => x && x.length === 2)); board.mark(lastStep.marks || []); } }
       moves.replaceChildren(...played.slice(-14).map((m, k, arr) => { const b = document.createElement('span'); b.textContent = m; if (k === arr.length - 1) b.className = 'cur'; return b; }));
       if (f.kind === 'intro') { note.textContent = lesson.blurb; note.className = 'ls-note intro'; moves.replaceChildren(); }
       else if (f.kind === 'outro') { note.textContent = lesson.outro; note.className = 'ls-note outro'; }

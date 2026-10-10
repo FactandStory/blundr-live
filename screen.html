@@ -84,6 +84,7 @@
   .cb-squares { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); }
   .cb-sq { position: relative; } .cb-sq.light { background: #EDE7D6; } .cb-sq.dark { background: #5B7A99; }
   .cb-sq.hi.light { background: #F5E39A; } .cb-sq.hi.dark { background: #C9A64A; }
+  .cb-sq.mk { box-shadow: inset 0 0 0 .45rem rgba(22,199,255,.85); }
   .cb-sq[data-file]::after, .cb-sq[data-rank]::before { position: absolute; font-size: .85rem; font-weight: 700; opacity: .55; }
   .cb-sq[data-file]::after { content: attr(data-file); right: .3rem; bottom: .1rem; } .cb-sq[data-rank]::before { content: attr(data-rank); left: .3rem; top: .1rem; }
   .cb-sq.light::after, .cb-sq.light::before { color: #5B7A99; } .cb-sq.dark::after, .cb-sq.dark::before { color: #EDE7D6; }
