@@ -126,6 +126,31 @@
   .tickets .collect { background: var(--gold); color: #070709; border-radius: 1rem; padding: 1rem 1.6rem; font-family: Sora, sans-serif; font-weight: 800; font-size: 1.9rem; text-align: center; }
   .tickets .collect small { display: block; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 1.2rem; margin-top: .2rem; }
 
+  /* welcome (doors open) */
+  .welcome { display: grid; grid-template-rows: auto 1fr; gap: 1.6rem; min-height: 0; animation: fade .5s ease; }
+  .welcome .kick { color: var(--cyan); font-weight: 700; text-transform: uppercase; letter-spacing: .12em; font-size: 1.2rem; }
+  .welcome .hello { font-family: Sora, sans-serif; font-weight: 800; font-size: 4.5rem; line-height: 1.05; letter-spacing: -.03em; margin-top: .3rem; white-space: nowrap; }
+  .welcome .hello mark { background: var(--cyan); color: #070709; padding: 0 .2em; border-radius: .15em; }
+  .welcome .body { display: grid; grid-template-columns: 1fr 18rem; gap: 2.4rem; min-height: 0; align-items: start; }
+  .welcome .steps { display: grid; gap: 1rem; }
+  .welcome .step { display: grid; grid-template-columns: 5rem 1fr; gap: 1.4rem; align-items: center; background: var(--panel); border-radius: 1.2rem; padding: .9rem 1.6rem; border-left: .6rem solid var(--line); transition: border-color .4s, transform .4s; }
+  .welcome .step.on { border-left-color: var(--cyan); transform: translateX(.6rem); }
+  .welcome .num { font-family: Sora, sans-serif; font-weight: 800; font-size: 4rem; line-height: 1; color: var(--muted); text-align: center; transition: color .4s; }
+  .welcome .step.on .num { color: var(--cyan); }
+  .welcome .st { font-family: Sora, sans-serif; font-weight: 800; font-size: 2.5rem; line-height: 1.1; letter-spacing: -.02em; }
+  .welcome .sd { color: var(--muted); font-size: 1.45rem; margin-top: .3rem; }
+  .welcome .pill { display: inline-block; color: #070709; font-weight: 800; font-family: Sora, sans-serif; font-size: 1.1rem; padding: .05rem .55rem; border-radius: .5rem; margin-right: .3rem; }
+  .welcome .side { display: grid; gap: .9rem; justify-items: center; text-align: center; }
+  .welcome .qr { background: #fff; border-radius: 1rem; padding: .7rem; width: 12rem; height: 12rem; }
+  .welcome .qr svg { width: 100%; height: 100%; display: block; }
+  .welcome .qrcap { color: var(--muted); font-size: 1.2rem; line-height: 1.3; }
+  .welcome .qrcap b { color: var(--ink); }
+  .welcome .when { background: var(--gold); color: #070709; border-radius: 1rem; padding: .8rem 1rem; font-family: Sora, sans-serif; font-weight: 800; font-size: 1.6rem; line-height: 1.15; width: 100%; }
+  .welcome .when small { display: block; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 1.05rem; margin-top: .25rem; }
+  .welcome .top2 { display: flex; align-items: baseline; justify-content: space-between; gap: 2rem; }
+  .welcome .here { font-family: Sora, sans-serif; font-weight: 800; font-size: 1.6rem; color: var(--ink); white-space: nowrap; }
+  .welcome .here small { color: var(--muted); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 1.05rem; }
+
   /* bottom bar */
   .bottom { display: grid; grid-template-columns: 27rem 1fr 24rem; gap: 2.4rem; align-items: center; border-top: 2px solid var(--line); padding-top: 1rem; min-height: 5rem; }
   .next { display: flex; align-items: baseline; gap: .9rem; white-space: nowrap; overflow: hidden; padding-bottom: .35rem; }
@@ -161,6 +186,7 @@
 <script src="lessons.js"></script>
 <script src="promos.js"></script>
 <script src="chessboard.js"></script>
+<script src="qrcode.min.js"></script>
 <script>
 (() => {
   // ?secs=10 dwell per slide · ?section=u12 pin one section · ?rows=12 rows per page
@@ -239,6 +265,7 @@
     if (f.kind === 'lesson') { if (!window.LESSONS || !window.Chess) return null; const L = window.LESSONS.find(l => l.id === f.lesson); if (!L) return null; return { f, L, key }; }
     if (f.kind === 'promo' && window.PROMOS) return { f, key };
     if (f.kind === 'tickets') return { f, key };
+    if (f.kind === 'welcome') return { f, key };
     return null;
   }
   function startLesson() {
@@ -248,6 +275,7 @@
     if (a.f.kind === 'lesson') { const host = el('div', { class: 'lesson' }); main.replaceChildren(host); lessonView = window.Chess.mountLesson(host, a.L); lessonView.tick(Date.now() - lessonStart); }
     else if (a.f.kind === 'promo') { lessonView = mountPromo(main); }
     else if (a.f.kind === 'tickets') { lessonView = mountTickets(main); }
+    else if (a.f.kind === 'welcome') { lessonView = mountWelcome(main); }
   }
   function stopLesson() { lessonView = null; lessonKey = null; lessonFeature = null; idx = -1; step(); }
   function lessonTick() {
@@ -308,6 +336,36 @@
     };
     build();
     return { total: 60000, refresh: build, tick(e) { const names = host.querySelectorAll('.name'); if (!names.length) return; const i = Math.floor(e / PER) % names.length; if (i !== lit) { lit = i; names.forEach((n, k) => n.classList.toggle('lit', k === i)); } } };
+  }
+
+  // ---- Welcome (doors open, 09:00–09:40): three check-in steps, a QR for anyone without a lanyard, live checked-in count
+  function mountWelcome(main) {
+    const SITE = 'https://factandstory.github.io/blundr-live/';
+    const r1 = (data.schedule && data.schedule.rounds && data.schedule.rounds['1']) || '10:00';
+    const step = (n, title, desc) => el('div', { class: 'step' }, el('div', { class: 'num' }, n), el('div', {}, el('div', { class: 'st' }, title), el('div', { class: 'sd' }, ...[].concat(desc))));
+    const pills = ['u8', 'u10', 'u12'].filter(k => data.sections[k]).map(k => el('span', { class: 'pill', style: `background:var(--${k})` }, data.sections[k].name));
+    const steps = [
+      step(1, 'Pick up your child’s lanyard', pills.length ? ['From the lanyard table. The colour band shows the section: ', ...pills] : 'From the lanyard table.'),
+      step(2, 'Scan the QR code on it', 'Use your phone camera. It opens your child’s own page.'),
+      step(3, 'Tap “We’re here”', 'That checks them in. Then follow their board, opponent and results all day.'),
+    ];
+    const qr = el('div', { class: 'qr' });
+    if (window.qrcode) { const q = qrcode(0, 'M'); q.addData(SITE); q.make(); qr.innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }); }
+    const here = el('div', { class: 'here' });
+    const host = el('div', { class: 'welcome' },
+      el('div', {}, el('div', { class: 'top2' }, el('div', { class: 'kick' }, 'Good morning, and welcome'), here), el('div', { class: 'hello' }, 'Welcome to the ', el('mark', {}, 'Bristol Junior Open'))),
+      el('div', { class: 'body' },
+        el('div', { class: 'steps' }, ...steps),
+        el('div', { class: 'side' }, qr, el('div', { class: 'qrcap' }, el('b', {}, 'No lanyard yet?'), ' Scan here and search for your child.'),
+          el('div', { class: 'when' }, 'Check-in closes 9:40', el('small', {}, `Players to the pavilion 9:50 · Round 1 at ${r1}`)))));
+    main.replaceChildren(host);
+    const count = () => {
+      const ci = data.checkin; const total = (data.roster || []).length;
+      if (ci && ci.arrived && total) here.replaceChildren(`${Math.min(ci.arrived.length, total)} of ${total}`, el('small', {}, ' checked in so far'));
+      else here.replaceChildren();
+    };
+    count(); let lit = -1; const PER = 5000;
+    return { total: PER * steps.length, refresh: count, tick(e) { const i = Math.floor(e / PER) % steps.length; if (i !== lit) { lit = i; steps.forEach((x, k) => x.classList.toggle('on', k === i)); } } };
   }
 
   function step() {
