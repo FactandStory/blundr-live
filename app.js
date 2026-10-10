@@ -68,7 +68,8 @@
     const nums = Object.keys(sec.rounds).map(Number).sort((a, b) => a - b);
     for (const n of nums) {
       const row = sec.rounds[n].find(r => r.white === name || r.black === name);
-      if (!row) { rounds.push({ round: n, bye: true }); continue; }
+      if (!row) { rounds.push({ round: n, absent: true }); continue; }   // skipped, late or withdrawn: not paired, 0 points
+      if (row.bye) { rounds.push({ round: n, bye: true }); continue; }
       const isWhite = row.white === name;
       const opp = isWhite ? row.black : row.white;
       let outcome = null; // win/loss/draw/live
@@ -108,7 +109,7 @@
   function ticketBlock(name, sec, hist) {
     const q = (data.qualify || {})[sec.slug]; if (!q) return null;
     const me = info(name, sec); const score = me.score ?? 0;
-    const played = hist.filter(h => h.bye || h.outcome).length; const left = Math.max(0, (sec.totalRounds || 6) - played);
+    const played = hist.filter(h => h.bye || h.absent || h.outcome).length; const left = Math.max(0, (sec.totalRounds || 6) - played);
     const targets = Object.entries(q).filter(([k]) => k !== '_how').map(([k, v]) => ({ k, label: k === 'final' ? `the ${sec.name} Final` : `the ${k === 'minor' ? 'Minor' : 'Major'} final`, need: v }));
     if (!targets.length) return null;
     const lines = []; let best = null;
@@ -254,6 +255,7 @@
 
   function nowBlock(h, sec) {
     const first = clean(followed.name).split(' ')[0];
+    if (h.absent) return el('div', { class: 'now' }, el('div', { class: 'board' }, '—', el('small', {}, 'board')), el('div', { class: 'detail' }, el('strong', {}, `Round ${h.round}: ${first} is not playing this round`), el('span', {}, 'Not in this round\'s pairings, so no points this round. If ' + first + ' is here and ready to play, tell the desk before the next round is paired.')));
     if (h.bye) return el('div', { class: 'now' }, el('div', { class: 'board' }, '—', el('small', {}, 'board')), el('div', { class: 'detail' }, el('strong', {}, `Round ${h.round}: ${first} has a bye`), el('span', {}, 'No game this round. A bye scores one point.')));
     const nr = nextRound(); const upcoming = !h.result && nr && nr.number === h.round && nr.at.getTime() > Date.now();
     const heading = h.result ? `Round ${h.round} result` : upcoming ? `Next game · round ${h.round}, ${nr.label}` : `Playing now · round ${h.round}`;
@@ -273,6 +275,7 @@
     const t = el('table', {}, el('thead', {}, el('tr', {}, el('th', {}, 'Rd'), el('th', {}, `${first}'s games`), el('th', { class: 'num' }, 'Result'))));
     const tb = el('tbody');
     for (const h of hist) {
+      if (h.absent) { tb.append(el('tr', {}, el('td', {}, h.round), el('td', {}, 'Not paired this round'), el('td', { class: 'num' }, '0'))); continue; }
       if (h.bye) { tb.append(el('tr', {}, el('td', {}, h.round), el('td', {}, 'Bye: no game, one point'), el('td', { class: 'num' }, el('span', { class: 'pill win' }, '+1')))); continue; }
       const i = info(h.opponent, sec);
       const oppNow = i.score != null ? `now on ${fmtPts(i.score)} ${i.score === 1 ? 'pt' : 'pts'}${i.rank ? ', ' + ordinal(i.rank) : ''}` : '';
