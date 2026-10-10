@@ -18,7 +18,7 @@ window.LESSONS = [
       { san: '3… Bg4', ops: [['c8', 'g4']], note: 'Black pins the knight to the queen. Morphy does not mind.' },
       { san: '4. dxe5', ops: [['d4', 'e5']] },
       { san: '4… Bxf3', ops: [['g4', 'f3']] },
-      { san: '5. Qxf3', ops: [['d1', 'f3']], note: 'White has a bishop and queen out already. Black has nothing developed.' },
+      { san: '5. Qxf3', ops: [['d1', 'f3']], note: 'A knight and a bishop have come off. After the exchange White has the queen out and the move; Black has nothing developed.' },
       { san: '5… dxe5', ops: [['d6', 'e5']] },
       { san: '6. Bc4', ops: [['f1', 'c4']], note: 'Bishop and queen both aim at f7, the weakest square on the board.' },
       { san: '6… Nf6', ops: [['g8', 'f6']] },
