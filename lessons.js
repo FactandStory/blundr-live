@@ -61,7 +61,7 @@ window.LESSONS = [
       { san: '3. Nh6+', ops: [['f7', 'h6']], note: 'Double check: knight and queen at once. Only the king can move, and f8 is still covered.', hold: 5500 },
       { san: '3… Kh8', ops: [['g8', 'h8']] },
       { san: '4. Qg8+!!', ops: [['c4', 'g8']], note: 'The queen goes right next to the king. The king cannot take: the knight guards g8. The rook has to.', hold: 6000 },
-      { san: '4… Rxg8', ops: [['f8', 'g8']] },
+      { san: '4… Rxg8', ops: [['a8', 'g8']] },
       { san: '5. Nf7#', ops: [['h6', 'f7']], note: 'Checkmate. The king cannot move: its own rook and pawns fill every square, and nothing can take the knight.', hold: 9000 },
     ],
     outro: 'Queen check, knight check, double check, queen sacrifice, knight mate. Look for it whenever a king is boxed in by its own pieces.',
