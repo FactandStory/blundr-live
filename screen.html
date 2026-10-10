@@ -100,6 +100,31 @@
   .ls-note { font-size: 2rem; line-height: 1.35; margin-top: 1rem; align-self: start; }
   .ls-note.intro, .ls-note.outro { font-size: 2.1rem; color: var(--ink); border-left: .4rem solid var(--cyan); padding-left: 1.2rem; }
 
+  /* other tournaments */
+  .promo { display: grid; grid-template-rows: auto 1fr; gap: 1.2rem; min-height: 0; animation: fade .5s ease; }
+  .promo .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.6rem; align-content: start; }
+  .promo .card { background: var(--panel); border-radius: 1.2rem; padding: 1.6rem 1.8rem; border-top: .6rem solid var(--cyan); display: grid; gap: .7rem; align-content: start; min-height: 0; transition: transform .4s, box-shadow .4s; }
+  .promo .card.on { transform: scale(1.03); box-shadow: 0 0 0 .25rem var(--card-colour); }
+  .promo .club { color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: .95rem; }
+  .promo .ttl { font-family: Sora, sans-serif; font-weight: 800; font-size: 2.1rem; line-height: 1.1; letter-spacing: -.02em; }
+  .promo .when { font-family: Sora, sans-serif; font-weight: 600; font-size: 1.35rem; color: var(--gold); }
+  .promo .where { font-size: 1.2rem; color: var(--muted); }
+  .promo ul { margin: .4rem 0 0; padding-left: 1.2rem; font-size: 1.25rem; line-height: 1.35; } .promo li { margin-bottom: .4rem; }
+  .promo .enter { margin-top: .6rem; font-size: 1.15rem; } .promo .enter b { font-family: Sora, sans-serif; }
+  .promo .foot-line { color: var(--muted); font-size: 1.3rem; text-align: center; }
+
+  /* golden tickets */
+  .tickets { display: grid; grid-template-rows: auto 1fr auto; gap: 1rem; min-height: 0; animation: fade .5s ease; }
+  .tickets .cols3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.6rem; align-content: start; min-height: 0; }
+  .tickets .col { display: grid; gap: .5rem; align-content: start; }
+  .tickets .col .sec { justify-self: start; font-size: 2rem; }
+  .tickets .name { font-family: Sora, sans-serif; font-weight: 800; font-size: 1.9rem; line-height: 1.15; display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; border-bottom: 1px solid var(--line); padding: .3rem 0; }
+  .tickets .name small { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 1.05rem; color: var(--gold); white-space: nowrap; }
+  .tickets .name.lit { color: var(--gold); }
+  .tickets .none { color: var(--muted); font-size: 1.3rem; }
+  .tickets .collect { background: var(--gold); color: #070709; border-radius: 1rem; padding: 1rem 1.6rem; font-family: Sora, sans-serif; font-weight: 800; font-size: 1.9rem; text-align: center; }
+  .tickets .collect small { display: block; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 1.2rem; margin-top: .2rem; }
+
   /* bottom bar */
   .bottom { display: grid; grid-template-columns: 27rem 1fr 24rem; gap: 2.4rem; align-items: center; border-top: 2px solid var(--line); padding-top: 1rem; min-height: 5rem; }
   .next { display: flex; align-items: baseline; gap: .9rem; white-space: nowrap; overflow: hidden; }
@@ -133,6 +158,7 @@
 
 <script src="pieces.js"></script>
 <script src="lessons.js"></script>
+<script src="promos.js"></script>
 <script src="chessboard.js"></script>
 <script>
 (() => {
@@ -206,24 +232,80 @@
   // ---- desk-pushed interlude (a chess lesson) takes over the main area, then the rotation returns by itself
   let lessonView = null, lessonKey = null, lessonStart = 0, lessonFeature = null; const lessonDone = new Set();
   function featureActive() {
-    const f = data && data.feature; if (!f || f.kind !== 'lesson' || !window.LESSONS || !window.Chess) return null;
-    const L = window.LESSONS.find(l => l.id === f.lesson); if (!L) return null;
+    const f = data && data.feature; if (!f) return null;
     const key = f.id || f.startedAt; if (lessonDone.has(key)) return null;
-    return { f, L, key };
+    if (f.kind === 'lesson') { if (!window.LESSONS || !window.Chess) return null; const L = window.LESSONS.find(l => l.id === f.lesson); if (!L) return null; return { f, L, key }; }
+    if (f.kind === 'promo' && window.PROMOS) return { f, key };
+    if (f.kind === 'tickets') return { f, key };
+    return null;
   }
   function startLesson() {
     const a = featureActive(); if (!a || a.key === lessonKey) return;
     clearTimeout(timer); lessonKey = a.key; lessonFeature = a.f; lessonStart = Date.parse(a.f.startedAt) || Date.now();
-    const main = $('#slide'); main.className = 'slide'; const host = el('div', { class: 'lesson' }); main.replaceChildren(host);
-    lessonView = window.Chess.mountLesson(host, a.L); $('#dots').replaceChildren();
-    lessonView.tick(Date.now() - lessonStart);
+    const main = $('#slide'); main.className = 'slide'; $('#dots').replaceChildren();
+    if (a.f.kind === 'lesson') { const host = el('div', { class: 'lesson' }); main.replaceChildren(host); lessonView = window.Chess.mountLesson(host, a.L); lessonView.tick(Date.now() - lessonStart); }
+    else if (a.f.kind === 'promo') { lessonView = mountPromo(main); }
+    else if (a.f.kind === 'tickets') { lessonView = mountTickets(main); }
   }
   function stopLesson() { lessonView = null; lessonKey = null; lessonFeature = null; idx = -1; step(); }
   function lessonTick() {
     if (!lessonView) return;
     let e = Date.now() - lessonStart;
+    if (lessonView.refresh) lessonView.refresh();   // promo/tickets re-read live data each tick
     if (e >= lessonView.total) { if (lessonFeature.loop) e = e % lessonView.total; else { lessonDone.add(lessonKey); stopLesson(); return; } }
     lessonView.tick(e);
+  }
+
+  // ---- other tournaments: three cards, one lit at a time
+  function mountPromo(main) {
+    const P = window.PROMOS; const DWELL_CARD = 9000;
+    const cards = P.map(p => el('div', { class: 'card', style: `border-top-color:${p.colour}; --card-colour:${p.colour}` },
+      el('div', { class: 'club' }, p.club), el('div', { class: 'ttl' }, p.title), el('div', { class: 'when' }, p.when), el('div', { class: 'where' }, p.where),
+      el('ul', {}, ...p.facts.map(f => el('li', {}, f))),
+      el('div', { class: 'enter' }, 'Enter at ', el('b', {}, p.enter), ' · ', p.contact)));
+    const host = el('div', { class: 'promo' },
+      el('div', { class: 'head' }, el('span', { class: 'sec sora', style: 'background:var(--gold)' }, 'Coming up'), el('span', { class: 'title sora' }, 'Three more tournaments for your diary'), el('span', { class: 'sub' }, 'details from the organisers')),
+      el('div', { class: 'cards' }, ...cards));
+    main.replaceChildren(host);
+    let lit = -1;
+    return { total: DWELL_CARD * P.length, tick(e) { const i = Math.floor(e / DWELL_CARD) % P.length; if (i !== lit) { lit = i; cards.forEach((c, k) => c.classList.toggle('on', k === i)); } } };
+  }
+
+  // ---- Golden Tickets: qualifiers so far from the standings and the LJCC pass marks in live.json
+  function qualifiers() {
+    const out = [];
+    for (const sec of Object.values(data.sections)) {
+      const q = (data.qualify || {})[sec.slug]; if (!q) continue;
+      const rows = (sec.standings || []).map(s => ({ name: clean(s.name), score: Number(String(s.score || '').replace('½', '.5').replace(',', '.')) || 0 })).filter(s => s.name);
+      const list = rows.map(s => {
+        if (q.final != null) return s.score >= q.final ? { ...s, label: 'Final' } : null;
+        if (q.major != null && s.score >= q.major) return { ...s, label: 'Major' };
+        if (q.minor != null && s.score >= q.minor) return { ...s, label: 'Minor' };
+        return null;
+      }).filter(Boolean);
+      const done = sec.progress && sec.progress.boards > 0 && sec.progress.entered >= sec.progress.boards && sec.currentRound === (sec.totalRounds || 6);
+      out.push({ sec, q, list, done });
+    }
+    return out;
+  }
+  function mountTickets(main) {
+    const prizes = (data.schedule && data.schedule.prizes) || '17:45';
+    const host = el('div', { class: 'tickets' });
+    main.replaceChildren(host);
+    let last = ''; let lit = -1; const PER = 2500;
+    const build = () => {
+      const qs = qualifiers(); const sig = JSON.stringify(qs.map(x => [x.sec.slug, x.list.map(l => l.name + l.score), x.done]));
+      if (sig === last) return; last = sig;
+      const allDone = qs.length && qs.every(x => x.done);
+      host.replaceChildren(
+        el('div', { class: 'head' }, el('span', { class: 'sec sora', style: 'background:var(--gold)' }, 'Golden Tickets'), el('span', { class: 'title sora' }, allDone ? 'Qualified for the London Junior Chess Championships' : 'On course for London so far'), el('span', { class: 'sub' }, allDone ? 'final' : 'standings still moving')),
+        el('div', { class: 'cols3' }, ...qs.map(x => el('div', { class: 'col' },
+          el('span', { class: `sec sora ${x.sec.slug}` }, x.sec.name),
+          ...(x.list.length ? x.list.map(l => el('div', { class: 'name', 'data-n': l.name }, el('span', {}, l.name), el('small', {}, `${String(l.score).replace('.5', '½')} pts · ${l.label}`))) : [el('div', { class: 'none' }, x.q.final != null ? `${x.q.final} points needed` : `${x.q.minor} for the Minor, ${x.q.major} for the Major`)])))),
+        el('div', { class: 'collect' }, `Collect your Golden Ticket at the prize-giving, ${prizes}, in the village hall`, el('small', {}, 'Trophies and medals are presented at the same time. Everyone welcome.')));
+    };
+    build();
+    return { total: 60000, refresh: build, tick(e) { const names = host.querySelectorAll('.name'); if (!names.length) return; const i = Math.floor(e / PER) % names.length; if (i !== lit) { lit = i; names.forEach((n, k) => n.classList.toggle('lit', k === i)); } } };
   }
 
   function step() {
