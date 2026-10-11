@@ -288,6 +288,15 @@
   function featureActive() {
     const f = data && data.feature; if (!f || PAVILION) return null;
     const key = f.id || f.startedAt; if (lessonDone.has(key)) return null;
+    if (f.kind === 'lesson' && f.lesson === 'all') {   // play every lesson in order, round and round, timed from startedAt (so a late page joins in step)
+      if (!window.LESSONS || !window.Chess) return null;
+      const T = lessonTotals(); const cyc = T.reduce((a, b) => a + b, 0) + 8000 * T.length; if (!cyc) return null;
+      const e = Math.max(0, Date.now() - (Date.parse(f.startedAt) || Date.now())); const n = Math.floor(e / cyc); let t = e % cyc, i = 0;
+      while (i < T.length && t >= T[i] + 8000) { t -= T[i] + 8000; i++; }
+      if (t >= T[i]) return null;   // the 8-second gap between lessons: pairings show
+      const k = `${key}#${n}#${i}`; if (lessonDone.has(k)) return null;
+      return { f: { ...f, loop: false }, L: window.LESSONS[i], key: k, start: Date.now() - t };
+    }
     if (f.kind === 'lesson') { if (!window.LESSONS || !window.Chess) return null; const L = window.LESSONS.find(l => l.id === f.lesson); if (!L) return null; return { f, L, key }; }
     if (f.kind === 'promo' && window.PROMOS) return { f, key };
     if (f.kind === 'tickets') return { f, key };
@@ -295,9 +304,15 @@
     if (f.kind === 'notice' && f.title) return { f, key };
     return null;
   }
+  let _totals = null;
+  function lessonTotals() {
+    if (_totals) return _totals;
+    _totals = window.LESSONS.map(L => { const d = document.createElement('div'); d.style.cssText = 'position:absolute;left:-9999px;width:1000px;height:600px'; document.body.append(d); const v = window.Chess.mountLesson(d, L); d.remove(); return v.total; });
+    return _totals;
+  }
   function startLesson() {
     const a = featureActive(); if (!a || a.key === lessonKey) return;
-    clearTimeout(timer); lessonKey = a.key; lessonFeature = a.f; lessonStart = Date.parse(a.f.startedAt) || Date.now();
+    clearTimeout(timer); lessonKey = a.key; lessonFeature = a.f; lessonStart = a.start || Date.parse(a.f.startedAt) || Date.now();
     const main = $('#slide'); main.className = 'slide'; $('#dots').replaceChildren();
     if (a.f.kind === 'lesson') { const host = el('div', { class: 'lesson' }); main.replaceChildren(host); lessonView = window.Chess.mountLesson(host, a.L); lessonView.tick(Date.now() - lessonStart); }
     else if (a.f.kind === 'promo') { lessonView = mountPromo(main); }
