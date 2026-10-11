@@ -244,7 +244,9 @@
     const nr = data.nextRound;
     if (nr && nr.startsAt && today(nr.startsAt).getTime() > Date.now() - 10 * 60000) return { number: nr.number, at: today(nr.startsAt), label: nr.startsAt, note: nr.note || '' };
     const sch = (data.schedule && data.schedule.rounds) || {}; const now = Date.now();
-    for (const [n, t] of Object.entries(sch)) { const at = today(t); if (at.getTime() > now - 3 * 60000) return { number: Number(n), at, label: t, note: '' }; }
+    // never fall back to the timetable for a round that is already paired (the day runs ahead of or behind the printed times)
+    const paired = Math.max(0, ...Object.values(data.sections || {}).map(x => x.currentRound || 0));
+    for (const [n, t] of Object.entries(sch)) { if (Number(n) <= paired) continue; const at = today(t); if (at.getTime() > now - 3 * 60000) return { number: Number(n), at, label: t, note: '' }; }
     if (data.schedule && data.schedule.prizes) { const at = today(data.schedule.prizes); if (at.getTime() > now - 3 * 60000) return { number: null, at, label: data.schedule.prizes, note: 'Prize-giving' }; }
     return null;
   }
