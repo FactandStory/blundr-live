@@ -161,6 +161,25 @@
   .notice .nx { color: var(--ink) !important; font-weight: 600; }
   .notice .nx { font-size: 2.6rem; color: var(--muted); max-width: 80vw; margin: 0 auto; }
 
+  /* final results */
+  .final { display: grid; grid-template-rows: auto 1fr; gap: 1rem; min-height: 0; animation: fade .5s ease; }
+  .final .fhead { display: flex; align-items: baseline; gap: 1.6rem; }
+  .final .ft { font-size: 4.4rem; line-height: 1; color: var(--gold); letter-spacing: -.03em; }
+  .final .fs { color: var(--muted); font-size: 1.5rem; }
+  .final .fcols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.8rem; min-height: 0; align-content: start; }
+  .final .fcol { display: grid; gap: .7rem; align-content: start; min-width: 0; }
+  .final .fcol > .sec { justify-self: start; font-size: 2rem; }
+  .final .pod { display: grid; gap: .3rem; }
+  .final .prow { display: grid; grid-template-columns: 3.6rem 1fr auto; gap: .8rem; align-items: baseline; font-size: 1.7rem; font-weight: 700; padding: .25rem 0; border-bottom: 1px solid var(--line); }
+  .final .prow .pl { font-size: 1.5rem; } .final .prow .pn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .final .prow .pp { font-family: Sora, sans-serif; font-weight: 800; }
+  .final .p1 .pl { color: var(--gold); } .final .p2 .pl { color: #C9CDD6; } .final .p3 .pl { color: #D08A4B; }
+  .final .tk { margin-top: .4rem; }
+  .final .tt { color: var(--gold); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 1rem; margin-bottom: .2rem; }
+  .final .tl { display: grid; gap: .05rem; }
+  .final .tn { display: flex; justify-content: space-between; gap: .8rem; font-size: 1.3rem; line-height: 1.35; }
+  .final .tn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .final .tn small { color: var(--muted); font-size: 1.1rem; font-weight: 700; }
+  .final .tnone { color: var(--muted); font-size: 1.1rem; }
+
   /* bottom bar */
   .bottom { display: grid; grid-template-columns: 27rem 1fr 24rem; gap: 2.4rem; align-items: center; border-top: 2px solid var(--line); padding-top: 1rem; min-height: 5rem; }
   .next { display: flex; align-items: baseline; gap: .9rem; white-space: nowrap; overflow: hidden; padding-bottom: .35rem; }
@@ -305,6 +324,7 @@
     if (f.kind === 'tickets') return { f, key };
     if (f.kind === 'welcome') return { f, key };
     if (f.kind === 'notice' && f.title) return { f, key };
+    if (f.kind === 'final') return { f, key };
     return null;
   }
   let _totals = null;
@@ -322,6 +342,7 @@
     else if (a.f.kind === 'tickets') { lessonView = mountTickets(main); }
     else if (a.f.kind === 'welcome') { lessonView = mountWelcome(main); }
     else if (a.f.kind === 'notice') { lessonView = mountNotice(main, a.f); }
+    else if (a.f.kind === 'final') { lessonView = mountFinal(main); }
   }
   function stopLesson() { lessonView = null; lessonKey = null; lessonFeature = null; idx = -1; step(); }
   function lessonTick() {
@@ -418,6 +439,34 @@
   function mountNotice(main, f) {
     main.replaceChildren(el('div', { class: 'notice' }, el('div', { class: 'kick' }, 'From the arbiters'), el('div', { class: 'nt sora' }, f.title), f.text ? el('div', { class: 'nx' }, ...f.text.split('|').flatMap((t, i) => i ? [el('br'), t.trim()] : [t.trim()])) : null));
     return { total: 600000, tick() {} };
+  }
+
+  // ---- final results: podium (top three from Tornelo's standings, tie-breaks applied) and Golden Tickets per section
+  function mountFinal(main) {
+    const host = el('div', { class: 'final' }); main.replaceChildren(host); let last = '';
+    const pts = x => { const t = String(x ?? '').replace(',', '.'); return t === '½' ? 0.5 : Number(t.replace('½', '.5')) || 0; };
+    const fmt = v => v === Math.floor(v) ? String(v) : (Math.floor(v) || '') + '½';
+    const build = () => {
+      const cols = ['u8', 'u10', 'u12'].filter(k => data.sections[k]).map(k => {
+        const sec = data.sections[k], q = (data.qualify || {})[k] || {};
+        const rows = (sec.standings || []).map(r => ({ name: clean(r.name), score: pts(r.score), rank: Number(r.rank) || 0 })).filter(r => r.name);
+        const podium = rows.slice(0, 3);
+        const groups = q.final != null ? [['Golden Ticket · Final', rows.filter(r => r.score >= q.final)]]
+          : [['Golden Ticket · Major', rows.filter(r => r.score >= q.major)], ['Golden Ticket · Minor', rows.filter(r => r.score >= q.minor && r.score < q.major)]];
+        return { k, sec, podium, groups };
+      });
+      const sig = JSON.stringify(cols.map(c => [c.podium, c.groups]));
+      if (sig === last) return; last = sig;
+      host.replaceChildren(
+        el('div', { class: 'fhead' }, el('div', { class: 'ft sora' }, 'Congratulations!'), el('div', { class: 'fs' }, 'Final results of the Bristol Junior Open')),
+        el('div', { class: 'fcols' }, ...cols.map(c => el('div', { class: 'fcol' },
+          el('span', { class: `sec sora ${c.k}` }, c.sec.name),
+          el('div', { class: 'pod' }, ...c.podium.map((r, i) => el('div', { class: 'prow p' + (i + 1) }, el('span', { class: 'pl sora' }, ['1st', '2nd', '3rd'][i]), el('span', { class: 'pn' }, r.name), el('span', { class: 'pp' }, fmt(r.score))))),
+          ...c.groups.map(([title, list]) => el('div', { class: 'tk' }, el('div', { class: 'tt' }, title + (list.length ? ` (${list.length})` : '')),
+            list.length ? el('div', { class: 'tl' }, ...list.map(r => el('div', { class: 'tn' }, el('span', {}, r.name), el('small', {}, fmt(r.score))))) : el('div', { class: 'tnone' }, 'none this time')))))));
+    };
+    build();
+    return { total: 600000, refresh: build, tick() {} };
   }
 
   function step() {
