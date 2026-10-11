@@ -157,7 +157,8 @@
   /* full-screen notice */
   .notice { display: grid; place-content: center; text-align: center; gap: 2rem; animation: fade .5s ease; }
   .notice .kick { color: var(--cyan); font-weight: 700; text-transform: uppercase; letter-spacing: .14em; font-size: 1.6rem; }
-  .notice .nt { font-size: 7rem; line-height: 1.05; letter-spacing: -.03em; max-width: 90vw; }
+  .notice .nt { font-size: 9rem; line-height: 1.05; letter-spacing: -.03em; max-width: 90vw; color: var(--gold); }
+  .notice .nx { color: var(--ink) !important; font-weight: 600; }
   .notice .nx { font-size: 2.6rem; color: var(--muted); max-width: 80vw; margin: 0 auto; }
 
   /* bottom bar */
@@ -413,7 +414,7 @@
 
   // ---- full-screen notice from the desk: a big headline and one line, until Stop
   function mountNotice(main, f) {
-    main.replaceChildren(el('div', { class: 'notice' }, el('div', { class: 'kick' }, 'From the arbiters'), el('div', { class: 'nt sora' }, f.title), f.text ? el('div', { class: 'nx' }, f.text) : null));
+    main.replaceChildren(el('div', { class: 'notice' }, el('div', { class: 'kick' }, 'From the arbiters'), el('div', { class: 'nt sora' }, f.title), f.text ? el('div', { class: 'nx' }, ...f.text.split('|').flatMap((t, i) => i ? [el('br'), t.trim()] : [t.trim()])) : null));
     return { total: 600000, tick() {} };
   }
 
