@@ -154,6 +154,12 @@
   .welcome .here { font-family: Sora, sans-serif; font-weight: 800; font-size: 1.6rem; color: var(--ink); white-space: nowrap; }
   .welcome .here small { color: var(--muted); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 1.05rem; }
 
+  /* full-screen notice */
+  .notice { display: grid; place-content: center; text-align: center; gap: 2rem; animation: fade .5s ease; }
+  .notice .kick { color: var(--cyan); font-weight: 700; text-transform: uppercase; letter-spacing: .14em; font-size: 1.6rem; }
+  .notice .nt { font-size: 7rem; line-height: 1.05; letter-spacing: -.03em; max-width: 90vw; }
+  .notice .nx { font-size: 2.6rem; color: var(--muted); max-width: 80vw; margin: 0 auto; }
+
   /* bottom bar */
   .bottom { display: grid; grid-template-columns: 27rem 1fr 24rem; gap: 2.4rem; align-items: center; border-top: 2px solid var(--line); padding-top: 1rem; min-height: 5rem; }
   .next { display: flex; align-items: baseline; gap: .9rem; white-space: nowrap; overflow: hidden; padding-bottom: .35rem; }
@@ -199,7 +205,23 @@
   const PIN = params.get('section');
   const PAVILION = params.get('pavilion') === '1';   // playing-room screen: pairings and the countdown only, no standings, no interludes
   const ROWS = Math.max(6, Number(params.get('rows')) || 12);
-  const LOCAL_URL = 'data/live.json', PUBLIC_URL = 'https://factandstory.github.io/blundr-live/data/live.json';
+  // ?scale=0.85 shrinks the whole picture inside a black border, for a projector image larger than its screen
+  const SCALE = Number(params.get('scale'));
+  // ?box=19,2,61,78 lays the whole page out inside that part of the picture (left %, top %, width %, height %): for a
+  // projector that only shows a window of what it is sent (measured with calibrate.html at the venue)
+  const BOX = (params.get('box') || '').split(',').map(Number);
+  if (BOX.length === 4 && BOX.every(n => n >= 0 && n <= 100)) {
+    const [L, T, W, H] = BOX; document.documentElement.style.background = '#000';
+    document.documentElement.style.fontSize = `${1.7 * H / 100}vh`;
+    const st = document.createElement('style'); st.textContent = '.bottom{grid-template-columns:auto 1fr!important}.bottom>div:last-child{display:none}'; document.head.append(st);
+    Object.assign(document.body.style, { position: 'absolute', left: L + 'vw', top: T + 'vh', width: W + 'vw', height: H + 'vh', padding: '1.6rem 2.4rem 1.4rem' });
+  }
+  // ?aspect=4:3 lays the page out in a narrower box (centred, black either side) for a screen narrower than 16:9
+  const ASPECT = (params.get('aspect') || '').split(':').map(Number);
+  if (ASPECT.length === 2 && ASPECT[0] > 0 && ASPECT[1] > 0) { document.documentElement.style.background = '#000'; Object.assign(document.body.style, { width: `${100 * ASPECT[0] / ASPECT[1]}vh`, maxWidth: '100vw', margin: '0 auto' });
+    const st = document.createElement('style'); st.textContent = '.bottom{grid-template-columns:auto 1fr!important}.bottom>div:last-child{display:none}'; document.head.append(st); }
+  if (SCALE > 0.4 && SCALE < 1) { document.documentElement.style.background = '#000'; document.body.style.transform = `translateY(${-(Number(params.get('up')) || 0)}vh) scale(${SCALE})`; document.body.style.transformOrigin = 'center center'; }   // ?up=4 lifts the picture 4%
+  const LOCAL_URL = params.get('demo') ? 'data/demo.json' : 'data/live.json', PUBLIC_URL = 'https://factandstory.github.io/blundr-live/data/live.json';
   let DATA_URL = LOCAL_URL; // if the iMac stops answering (Wi-Fi isolation, iMac asleep), fall back to the public copy and keep trying the iMac now and then
   const REFRESH_MS = /github\.io$/.test(location.hostname) ? 15000 : 4000;   // on the iMac the data is local, so poll fast: desk pushes land within 4 s
 
@@ -270,6 +292,7 @@
     if (f.kind === 'promo' && window.PROMOS) return { f, key };
     if (f.kind === 'tickets') return { f, key };
     if (f.kind === 'welcome') return { f, key };
+    if (f.kind === 'notice' && f.title) return { f, key };
     return null;
   }
   function startLesson() {
@@ -280,6 +303,7 @@
     else if (a.f.kind === 'promo') { lessonView = mountPromo(main); }
     else if (a.f.kind === 'tickets') { lessonView = mountTickets(main); }
     else if (a.f.kind === 'welcome') { lessonView = mountWelcome(main); }
+    else if (a.f.kind === 'notice') { lessonView = mountNotice(main, a.f); }
   }
   function stopLesson() { lessonView = null; lessonKey = null; lessonFeature = null; idx = -1; step(); }
   function lessonTick() {
@@ -370,6 +394,12 @@
     };
     count(); let lit = -1; const PER = 5000;
     return { total: PER * steps.length, refresh: count, tick(e) { const i = Math.floor(e / PER) % steps.length; if (i !== lit) { lit = i; steps.forEach((x, k) => x.classList.toggle('on', k === i)); } } };
+  }
+
+  // ---- full-screen notice from the desk: a big headline and one line, until Stop
+  function mountNotice(main, f) {
+    main.replaceChildren(el('div', { class: 'notice' }, el('div', { class: 'kick' }, 'From the arbiters'), el('div', { class: 'nt sora' }, f.title), f.text ? el('div', { class: 'nx' }, f.text) : null));
+    return { total: 600000, tick() {} };
   }
 
   function step() {
