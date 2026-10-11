@@ -445,7 +445,7 @@
     if (s.kind === 'countdown') {
       const nr = nextRound(); if (!nr) return [el('div', { class: 'count' }, el('div', { class: 'what' }, 'Next round soon'))];
       const what = nr.number ? `Round ${nr.number} starts at ${nr.label}` : `${nr.note || 'Next'} at ${nr.label}`;
-      return [el('div', { class: 'count' }, el('div', { class: 'digits', id: 'cd' }, mmss(nr.at - Date.now())), el('div', { class: 'what' }, what), el('div', { class: 'where' }, nr.note && nr.number ? nr.note : ['Players to the Pavilion five minutes before.', el('br'), 'Parents stay in the Village Hall.']))];
+      return [el('div', { class: 'count' }, el('div', { class: 'digits', id: 'cd' }, mmss(nr.at - Date.now())), el('div', { class: 'what' }, what), el('div', { class: 'where' }, !nr.number ? 'Everyone welcome in the Playing Hall (the Pavilion).' : nr.note ? nr.note : ['Players to the Pavilion five minutes before.', el('br'), 'Parents stay in the Village Hall.']))];
     }
     if (s.kind === 'waiting') {
       const r1 = data.schedule && data.schedule.rounds && data.schedule.rounds['1'];
